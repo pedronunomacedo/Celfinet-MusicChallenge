@@ -65,4 +65,4 @@ jobs:
         # Add your deployment commands here, e.g., python manage.py runserver
         # python src/backend/backend/manage.py runserver
         cd src/backend/backend
-        gunicorn --bind 0.0.0.0:8000 backend.wsgi:application
+        gunicorn --bind 0.0.0.0:8000 backend.wsgi:application --daemon
