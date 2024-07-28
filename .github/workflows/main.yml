@@ -30,6 +30,10 @@ jobs:
         
         pwd
         ls -la
+        cd backend
+
+        pwd
+        pwd ls-la
 
     - name: Install dependencies
       run: |
