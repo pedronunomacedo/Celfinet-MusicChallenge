@@ -13,3 +13,4 @@ djangorestframework
 environs
 django-cors-headers
 pytz
+PIL
