@@ -14,3 +14,4 @@ environs
 django-cors-headers
 pytz
 Pillow
+gunicorn
