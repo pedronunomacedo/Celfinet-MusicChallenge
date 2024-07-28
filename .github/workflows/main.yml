@@ -21,6 +21,13 @@ jobs:
     - name: List current working directory
       run: |
         pwd
+        ls -la
+        cd backend
+
+        pwd
+        ls -la
+        
+
 
     - name: Install dependencies
       run: |
