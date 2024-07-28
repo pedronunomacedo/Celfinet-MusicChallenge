@@ -47,4 +47,4 @@ jobs:
         echo "Deploying application..."
         # Add your deployment commands here, e.g., python manage.py runserver
         # python src/backend/backend/manage.py runserver
-        gunicorn --bind 0.0.0.0:8000 src.backend.backend.backend.wsgi:application
+        gunicorn --bind 0.0.0.0:8000 src.backend.backend.wsgi:application
