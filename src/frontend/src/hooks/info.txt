@@ -1,0 +1,2 @@
+Contains custom hooks for encapsulating reusable logic.
+For example, useAlbums.js for managing album-related state and side effects.

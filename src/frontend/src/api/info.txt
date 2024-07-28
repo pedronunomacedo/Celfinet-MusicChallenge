@@ -1,0 +1,2 @@
+Contains files for handling API requests.
+For example, albumService.js contains functions for fetching and manipulating album data.

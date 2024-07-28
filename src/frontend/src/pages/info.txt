@@ -1,0 +1,2 @@
+Contains components that represent entire pages or views.
+For example, AlbumPage.js combines AlbumList and AlbumForm to create a complete page for managing albums.

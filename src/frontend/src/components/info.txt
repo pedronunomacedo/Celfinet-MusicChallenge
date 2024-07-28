@@ -1,0 +1,2 @@
+Contains reusable UI components.
+For example, AlbumList.js for rendering a list of albums and AlbumForm.js for creating or editing an album.

@@ -1,0 +1,2 @@
+Contains utility functions and constants.
+For example, helpers.js for general utility functions that can be used throughout your app.
