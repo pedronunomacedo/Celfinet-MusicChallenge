@@ -22,10 +22,11 @@ jobs:
       run: |
         pwd
         ls -la
-        cd backend
+        cd src
 
         pwd
         ls -la
+        cd backend
         
 
 
