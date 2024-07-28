@@ -2,6 +2,7 @@ from django.db import models
 from PIL import Image as PilImage
 from PIL.ExifTags import TAGS
 from datetime import datetime
+from django.utils import timezone
 
 # Create your models here.
 
@@ -23,7 +24,7 @@ class Image(models.Model):
     image = models.ImageField(
         upload_to='post_images'
     )
-    creation_date = models.DateTimeField(null=True, blank=True, default=datetime.now())
+    creation_date = models.DateTimeField(null=True, blank=True, default=timezone.now)
     image_url = models.CharField(max_length=600, default='/default_images/default_camera_icon.png')
     
     def __str__(self):
