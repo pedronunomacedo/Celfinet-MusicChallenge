@@ -44,18 +44,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r src/backend/requirements.txt
     
-    - name: Debug Secrets
-      run: |
-        echo "DB_NAME: $DB_NAME"
-        echo "DB_HOST: $DB_HOST"
-        echo "DB_USERNAME: $DB_USERNAME"
-        echo "DB_PASSWORD: $DB_PASSWORD"
-      env:
-        DB_NAME: ${{ secrets.DB_NAME }}
-        DB_HOST: ${{ secrets.DB_HOST }}
-        DB_USERNAME: ${{ secrets.DB_USERNAME }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-    
     - name: Run migrations
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
