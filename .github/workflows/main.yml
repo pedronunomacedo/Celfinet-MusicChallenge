@@ -35,7 +35,7 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       run: |
         echo "Running migrations..."
-        python manage.py migrate
+        python src/backend/backend/manage.py migrate
 
     - name: Deploy to production
       env:
