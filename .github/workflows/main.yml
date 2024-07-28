@@ -18,6 +18,10 @@ jobs:
       with:
         python-version: '3.12'  # Ensure this matches your project Python version
 
+    - name: List current working directory
+      run: |
+        pwd
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -43,8 +47,3 @@ jobs:
         echo "Deploying application..."
         # Add your deployment commands here, e.g., python manage.py runserver
         python manage.py runserver
-
-
-    - name: List current working directory
-      run: |
-        pwd
