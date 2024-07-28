@@ -43,3 +43,8 @@ jobs:
         echo "Deploying application..."
         # Add your deployment commands here, e.g., python manage.py runserver
         python manage.py runserver
+
+
+    - name: List current working directory
+      run: |
+        pwd
