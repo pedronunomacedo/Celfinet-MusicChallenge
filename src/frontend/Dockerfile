@@ -7,6 +7,7 @@ WORKDIR /app
 # install application dependencies
 COPY package*.json ./
 RUN npm install --verbose
+RUN npm install react-scripts@5.0.1 -g --silent
 
 # add app
 COPY . ./
