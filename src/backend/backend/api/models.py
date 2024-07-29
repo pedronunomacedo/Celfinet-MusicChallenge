@@ -64,7 +64,7 @@ class Image(models.Model):
         # Call the parent save method to save the changes to the database
         super().save(*args, **kwargs)
         
-        logger.Info(f"Image {unique_filename} saved successfully!")
+        logger.info(f"Image {unique_filename} saved successfully!")
         
         # Update the image_url field
         if not self.image_url:  # To avoid redundant saves
