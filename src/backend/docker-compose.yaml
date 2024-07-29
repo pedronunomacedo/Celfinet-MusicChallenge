@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  db:
+    image: mongo:latest
+    container_name: "mongo_db"
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${DB_NAME}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - appnetwork
+
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: "django_api"
+    ports:
+      - "8000:8000"
+    environment:
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: "db"
+      DB_PORT: "27017"
+      DB_SSL: "False"
+    depends_on:
+      - db
+    volumes:
+      - media_volume:/app/media
+    networks:
+      - appnetwork
+
+volumes:
+  mongo_data:
+  media_volume:
+
+networks:
+  appnetwork:
+    name: appnetwork
+    driver: bridge

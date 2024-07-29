@@ -90,8 +90,6 @@ const AlbumComponent = () => {
         // Upload the image calling this function uploadImage
         let response = await uploadImage(info.file.originFileObj);
 
-        console.log("response: ");
-        console.log(response.data.image_url);
         if (response.status === 201) {
             setImages((prevImages) => [...prevImages, response.data]);
             setUploadingImage(false);
@@ -109,15 +107,10 @@ const AlbumComponent = () => {
     const handleDeleteImage = async (imageID) => {
         const response = await deleteImage(imageID);
 
-        console.log("response.status: ", response.status);
         if (response.status === 200) {
-            // Find the div with "image-" + imageID and remove it
-            console.log("imageID: ", imageID);
-            // const imageDiv = document.getElementById(`image-${imageID}`);
-            // imageDiv.parentNode.removeChild(imageDiv);
-
             const updatedImages = images.filter((image) => image.id!== imageID);
             setImages(updatedImages);
+            setSelectedImgID(null);
         }
     };
 
@@ -205,7 +198,7 @@ const AlbumComponent = () => {
                                         opacity: 1,
                                         transition: {
                                             duration: 0.5,
-                                            delay: (uploadedImage === image.image) ? 0 : Math.max(0.15 * index, 1) // If the image is the uploaded one, it must not have any delay
+                                            delay: (uploadedImage === image.image_url) ? 0 : Math.max(0.15 * index, 1) // If the image is the uploaded one, it must not have any delay
                                         }
                                     }}
                                     transition={{
@@ -221,7 +214,7 @@ const AlbumComponent = () => {
                                     <div className='w-full h-full object-cover rounded-md'>
                                         <img
 
-                                            src={`${image.image}`}
+                                            src={`${image.image_url}`}
                                             alt="Uploaded"
                                             className='w-full h-full object-cover rounded-md'
                                         />
@@ -313,7 +306,7 @@ const AlbumComponent = () => {
                                 </motion.button>
                             </div>
                             <motion.img
-                                src={images.find(image => image.id === selectedImgID)?.image}
+                                src={images.find(image => image.id === selectedImgID)?.image_url}
                                 alt="Selected"
                                 className='max-h-[80%] object-contain aspect-square rounded-md'
                             />
@@ -340,6 +333,7 @@ const AlbumComponent = () => {
                                                 duration: 0.2
                                             }
                                         }}
+                                        onClick={() => handleDeleteImage(selectedImgID)}
                                     >
                                         <TrashIconOutlined width={25} height={25} />
                                     </motion.button>

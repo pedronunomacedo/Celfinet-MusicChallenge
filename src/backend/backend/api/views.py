@@ -1,4 +1,8 @@
 import os
+import logging
+from bson import ObjectId
+from djongo import models
+from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -10,6 +14,10 @@ from django.utils import timezone
 from .models import Album
 from .models import Image
 from .serializers import AlbumSerializer, ImageSerializer
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 # Create your views here.
 
@@ -59,26 +67,37 @@ class ImageViewSet(viewsets.ModelViewSet):
         try:
             # if not request.user.is_authenticated:
             #     return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+            
 
             image_file = request.FILES.get('image')
             if not image_file:
                 return Response({"detail": "No image file provided."}, status=status.HTTP_400_BAD_REQUEST)
+                        
+            existing_image = Image.objects.filter(image=image_file.name).first()
+            if existing_image:
+                logger.info("Duplicate image upload detected.")
+                serializer = ImageSerializer(existing_image)
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
             creation_datetime = self.extract_exif_data(image_file)
+                        
             
             if creation_datetime:
                 image_instance = Image(image=image_file, creation_date=creation_datetime)
                 image_instance.save()
                 serializer = ImageSerializer(image_instance)
+                logger.info(f"Image upload successfully!")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 image_instance = Image(image=image_file)
                 image_instance.save()
                 serializer = ImageSerializer(image_instance)
+                logger.info(f"Image upload successfully!")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+                
         except Exception as e:
             # Log the exception (you might use logging module instead of print in production)
-            print(f"An error occurred: {e}")
+            logger.info(f"An error occurred: {e}")
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @csrf_exempt  # Uncomment this for testing (if comment, it should give the error CSRF verification failed)
@@ -92,16 +111,19 @@ class ImageViewSet(viewsets.ModelViewSet):
             image_id = request.data.get('image_id')
             if not image_id:
                 return Response({"detail": "No image ID provided."}, status=status.HTTP_400_BAD_REQUEST)
-
-            image_instance = Image.objects.get(pk=image_id)
+            
+            image_instance = Image.objects.get(pk=ObjectId(image_id))
+            
             image_path = image_instance.image.path  # Assuming 'image' is the field name for the image file
-
+            
             # Delete the image file from the folder
             if os.path.exists(image_path):
                 os.remove(image_path)
 
             # Delete the image record from the database
             image_instance.delete()
+            
+            logger.info(f"Image with ID {image_id} deleted successfully!")
 
             return Response({"detail": "Image deleted successfully."}, status=status.HTTP_200_OK)
         except Image.DoesNotExist:

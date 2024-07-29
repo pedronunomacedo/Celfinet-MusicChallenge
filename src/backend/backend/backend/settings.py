@@ -15,7 +15,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-4iw$k27ul1x&$*j!2u4v!j+nfyo&(%)df_v0uz^zhei+odrm7q'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',                                        # Allow requests from localhost
+    '127.0.0.1',                                        # Allow requests from 127.0.0.1
+    'app',                                              # Allow requests from the 'app' service in Docker
+    'djangoApi',                                        # Allow requests from the 'djangoApi' service in Docker
+    'ec2-3-141-0-239.us-east-2.compute.amazonaws.com'   # Allow requests from the AWS EC2 instance
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -86,10 +92,11 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME'),
         'CLIENT': {
             'host': os.getenv('DB_HOST'),
-            'username': os.getenv('DB_USERNAME'),
-            'password': os.getenv('DB_PASSWORD'),
+            'username': os.getenv('DB_USERNAME') or None,
+            'password': os.getenv('DB_PASSWORD') or None,
+            'authSource': os.getenv('DB_AUTH_SOURCE'),
             'authMechanism': 'SCRAM-SHA-1',
-            'ssl': True,
+            'ssl': os.getenv('DB_SSL', 'False').lower() in ['true', '1', 't'],
             'ssl_cert_reqs': 'CERT_NONE'  # For testing purposes, disable SSL certificate verification
         }
     }
@@ -148,3 +155,27 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Define the hosts that are allowed to access the API (in our case, it must be the frontend host, localhost:3000)
 # CORS_ALLOWED_ORIGINS = ['http://localhost:3000']
 CORS_ALLOW_ALL_ORIGINS = True
+
+# settings.py
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#         },
+#         'file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': 'myapp.log',
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['console', 'file'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#     },
+# }

@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  music-challenge:
+    build: .
+    container_name: music_challenge_frontend
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+    environment:
+      FLASK_ENV: development
+    networks:
+      - appnetwork
+  redis:
+    image: "redis:alpine"
+    networks:
+      - appnetwork
+
+networks:
+  appnetwork:
+    external: true
