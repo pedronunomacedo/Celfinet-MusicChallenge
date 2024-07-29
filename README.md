@@ -24,3 +24,42 @@ The purpose of this challenge is to create an online gallery platform where each
     </div>
 </div>
 
+## How to run this project?
+
+1. Clone the repository to your local machine.
+
+```sh
+git clone https://github.com/pedronunomacedo/Celfinet-MusicChallenge.git
+```
+
+2. Enter the project repository folder.
+
+```sh
+cd Celfinet-MusicChallenge
+```
+
+3. Now, let's build the docker containers for both backend and frontend. Start by going the backend folder. 
+
+```sh
+cd backend
+```
+
+4. Build and run the backend docker container.
+
+```sh
+docker-compose up -d
+```
+
+5. Now, let's build and run the frontend docker container.
+
+```sh
+cd ../frontend
+```
+
+6. Build and run the frontend docker container.
+
+```sh
+docker-compose up -d
+```
+
+7. Finally, you can access this project on the link http://localhost:3000.
