@@ -26,6 +26,8 @@ The purpose of this challenge is to create an online gallery platform where each
 
 ## How to run this project?
 
+> **_ATTENTION:_**  Do not forget to configure your database configurations to the .env file (inside the folder `src/backend`). In the folder `src/backend`, you can find an .env exmaple file in order to help you through this process.
+
 1. Clone the repository to your local machine.
 
 ```sh
@@ -41,7 +43,7 @@ cd Celfinet-MusicChallenge
 3. Now, let's build the docker containers for both backend and frontend. Start by going the backend folder. 
 
 ```sh
-cd backend
+cd src/backend
 ```
 
 4. Build and run the backend docker container.
