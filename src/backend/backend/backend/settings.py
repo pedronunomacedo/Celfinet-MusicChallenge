@@ -196,3 +196,6 @@ DEFAULT_FILE_STORAGE='storages.backends.s3boto3.S3Boto3Storage'
 
 
 APPEND_SLASH=False
+client_id = "e2be863844da48efb59e9c5c89581ca9"
+client_secret ="b6f1b3199e8641a386b190d0a87fd1f5"
+
