@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { fetchAlbums, createAlbum, fetchImages, deleteImage, uploadImage } from '../api/albumService'; // Adjust the import path as necessary
 import { DefaultBtn } from '../components/Buttons/DefaultBtn';
@@ -7,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { TrashIcon as TrashIconOutlined, EyeIcon, CheckCircleIcon, XMarkIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 import './AlbumPage.css';
+import Header from '../Header.js';
 
 const { Option } = Select;
 
@@ -147,11 +149,15 @@ const AlbumComponent = () => {
 
     return (
         <div className='w-full items-center justify-center'>
+            {/* Include the header component */}
+            <Header />
+    
+            {/* Rest of your existing code */}
             {loading && <p>Loading...</p>}
-
+    
             <div id="album-creation-popup">
                 <DefaultBtn onClick={showModal} title="Create album" />
-
+    
                 <Modal
                     title="Create album"
                     open={isModalOpen}
@@ -181,13 +187,13 @@ const AlbumComponent = () => {
                     </Form>
                 </Modal>
             </div>
-
+    
             <ul>
                 {albums.map(album => (
                     <li key={album.id}>{album.title} by {album.creator}</li>
                 ))}
             </ul>
-
+    
             <div className='w-5/6 h-full mx-auto space-y-3'>
                 <h2 className='font-semibold text-2xl text-gray-800'>All photos</h2>
                 <ul id='images-list' className='grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-2'>
@@ -297,7 +303,7 @@ const AlbumComponent = () => {
                                                 whileHover={{
                                                     backgroundColor: 'rgba(255, 255, 255, 0.2)'
                                                 }}
-
+    
                                             >
                                                 <CheckCircleIcon width={25} height={25} />
                                             </motion.li>
@@ -413,8 +419,7 @@ const AlbumComponent = () => {
                     </motion.div>
                 </motion.div>
             )}
-
-            {/* Prompt for author and tags */}
+    
             <Modal
                 title="Enter Author Name and Tags"
                 visible={promptVisible}
@@ -444,10 +449,12 @@ const AlbumComponent = () => {
                     </Form.Item>
                 </Form>
             </Modal>
-
+            
+    
             
         </div>
     );
+    
 };
 
 export default AlbumComponent;
