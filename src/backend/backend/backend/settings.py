@@ -20,7 +20,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',                                        # Allow requests from 127.0.0.1
     'app',                                              # Allow requests from the 'app' service in Docker
     'djangoApi',                                        # Allow requests from the 'djangoApi' service in Docker
-    'ec2-3-141-0-239.us-east-2.compute.amazonaws.com'   # Allow requests from the AWS EC2 instance
+    'ec2-3-141-0-239.us-east-2.compute.amazonaws.com',  # Allow requests from the AWS EC2 instance
+    '3.21.224.193'                                      # Allow requests from the EC2 instance 
 ]
 
 # Application definition
@@ -34,6 +35,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'api',
+    'backend',
 ]
 
 MIDDLEWARE = [
@@ -179,3 +181,18 @@ CORS_ALLOW_ALL_ORIGINS = True
 #         },
 #     },
 # }
+
+# Settings for S3 AWS Bucket
+AWS_ACCESS_KEY_ID=os.getenv('AWS_ACCESS_KEY_ID', 'your-access-key')
+AWS_SECRET_ACCESS_KEY=os.getenv('AWS_SECRET_ACCESS_KEY', 'your-secret-key')
+AWS_STORAGE_BUCKET_NAME=os.getenv('AWS_STORAGE_BUCKET_NAME', 'your-bucket-name')
+AWS_SIGNATURE_NAME='s3v4',
+AWS_S3_REGION_NAME='us-east-2'
+AWS_S3_FILE_OVERWRITE=False
+AWS_DEFAULT_ACL=None
+
+AWS_S3_ADDRESSING_STYLE='virtual'
+DEFAULT_FILE_STORAGE='storages.backends.s3boto3.S3Boto3Storage'
+
+
+APPEND_SLASH=False

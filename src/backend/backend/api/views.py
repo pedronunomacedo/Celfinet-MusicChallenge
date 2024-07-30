@@ -85,14 +85,14 @@ class ImageViewSet(viewsets.ModelViewSet):
             if creation_datetime:
                 image_instance = Image(image=image_file, creation_date=creation_datetime)
                 image_instance.save()
-                serializer = ImageSerializer(image_instance)
-                logger.info(f"Image upload successfully!")
+                serializer = ImageSerializer(data=image_instance)
+                logger.info(f"2) Image upload successfully!")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 image_instance = Image(image=image_file)
                 image_instance.save()
-                serializer = ImageSerializer(image_instance)
-                logger.info(f"Image upload successfully!")
+                serializer = ImageSerializer(data=image_instance)
+                logger.info(f"2) Image upload successfully!")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
                 
         except Exception as e:
@@ -132,4 +132,3 @@ class ImageViewSet(viewsets.ModelViewSet):
             # Log the exception (you might use logging module instead of print in production)
             print(f"An error occurred: {e}")
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            

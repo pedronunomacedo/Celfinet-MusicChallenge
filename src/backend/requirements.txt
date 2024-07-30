@@ -15,3 +15,7 @@ django-cors-headers
 pytz
 Pillow
 gunicorn
+boto3
+django-storages
+python-dotenv
+django-extensions
