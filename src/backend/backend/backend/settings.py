@@ -179,3 +179,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 #         },
 #     },
 # }
+
+client_id = "e2be863844da48efb59e9c5c89581ca9"
+client_secret ="b6f1b3199e8641a386b190d0a87fd1f5"
+
