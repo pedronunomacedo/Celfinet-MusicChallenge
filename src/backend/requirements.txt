@@ -15,3 +15,4 @@ django-cors-headers
 pytz
 Pillow
 gunicorn
+spotipy
