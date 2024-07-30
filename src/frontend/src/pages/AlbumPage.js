@@ -1,13 +1,14 @@
-// Example usage in a React component
 import React, { useEffect, useState } from 'react';
 import { fetchAlbums, createAlbum, fetchImages, deleteImage, uploadImage } from '../api/albumService'; // Adjust the import path as necessary
 import { DefaultBtn } from '../components/Buttons/DefaultBtn';
-import { Form, Input, Modal, Upload, Skeleton, Image, message } from 'antd';
+import { Form, Input, Modal, Upload, Skeleton, message, Select } from 'antd';
 import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
 import { AnimatePresence, motion } from "framer-motion";
-import { TrashIcon as TrashIconOutlined, EyeIcon, CheckIcon, CheckCircleIcon, XMarkIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { TrashIcon as TrashIconOutlined, EyeIcon, CheckCircleIcon, XMarkIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 import './AlbumPage.css';
+
+const { Option } = Select;
 
 const getBase64 = (img, callback) => {
     const reader = new FileReader();
@@ -22,7 +23,7 @@ const beforeUpload = (file) => {
     }
     const isLt2M = file.size / 1024 / 1024 < 10;
     if (!isLt2M) {
-        message.error('Image must smaller than 2MB!');
+        message.error('Image must be smaller than 10MB!');
     }
     return isJpgOrPng && isLt2M;
 };
@@ -35,31 +36,37 @@ const AlbumComponent = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [uploadedImage, setUploadedImage] = useState('');
-    const [sketlonActive, setSketlonActive] = useState(true);
+    const [skeletonActive, setSkeletonActive] = useState(true);
+    const [selectedImgID, setSelectedImgID] = useState(null);
 
-    const [selectedImgID, setSelectedImgID] = useState(null)
+    const [author, setAuthor] = useState('');
+    const [tags, setTags] = useState([]);
+    const [promptVisible, setPromptVisible] = useState(false);
+    const [pendingFile, setPendingFile] = useState(null);
+
+    const [form] = Form.useForm();
 
     useEffect(() => {
         const loadAlbums = async () => {
             try {
-                const albuns = await fetchAlbums();
-                setAlbums(albuns);
+                const albums = await fetchAlbums();
+                setAlbums(albums);
                 const images = await fetchImages();
                 setImages(images);
             } catch (error) {
                 setError(error);
             } finally {
                 setLoading(false);
-                setSketlonActive(false);
+                setSkeletonActive(false);
             }
         };
 
         loadAlbums();
     }, []);
 
-    const handleCreateAlbum = async () => {
+    const handleCreateAlbum = async (values) => {
         try {
-            const newAlbum = { title: 'New Album', creator: 'Artist Name' };
+            const newAlbum = { title: 'New Album', creator: values.author, tags: values.tags };
             const data = await createAlbum(newAlbum);
             setAlbums([...albums, data]);
         } catch (error) {
@@ -72,9 +79,13 @@ const AlbumComponent = () => {
     };
 
     const handleCreate = () => {
-        handleCreateAlbum();
-
-        setIsModalOpen(false);
+        form.validateFields().then((values) => {
+            handleCreateAlbum(values);
+            setIsModalOpen(false);
+            form.resetFields();
+        }).catch((info) => {
+            console.log('Validate Failed:', info);
+        });
     };
 
     const handleCancel = () => {
@@ -87,7 +98,6 @@ const AlbumComponent = () => {
             return;
         }
 
-        // Upload the image calling this function uploadImage
         let response = await uploadImage(info.file.originFileObj);
 
         if (response.status === 201) {
@@ -97,18 +107,39 @@ const AlbumComponent = () => {
         }
     };
 
+    const handleUploadButtonClick = async () => {
+        setPromptVisible(true);
+    };
+
+    const handlePromptSubmit = () => {
+        form.validateFields()
+            .then((values) => {
+                setAuthor(values.author);
+                setTags(values.tags);
+                setPromptVisible(false);
+
+                if (pendingFile) {
+                    handleImgUpload({ file: pendingFile });
+                    setPendingFile(null);
+                }
+            })
+            .catch((info) => {
+                console.log('Validate Failed:', info);
+            });
+    };
+
     const uploadButton = (
-        <button style={{ border: 0, background: 'none' }} type="button">
+        <div onClick={handleUploadButtonClick} style={{ border: 0, background: 'none', cursor: 'pointer' }}>
             {uploadingImage ? <LoadingOutlined /> : <PlusOutlined />}
             <div style={{ marginTop: 8 }}>Upload</div>
-        </button>
+        </div>
     );
 
     const handleDeleteImage = async (imageID) => {
         const response = await deleteImage(imageID);
 
         if (response.status === 200) {
-            const updatedImages = images.filter((image) => image.id!== imageID);
+            const updatedImages = images.filter((image) => image.id !== imageID);
             setImages(updatedImages);
             setSelectedImgID(null);
         }
@@ -127,13 +158,25 @@ const AlbumComponent = () => {
                     onOk={handleCreate} okText="Create"
                     onCancel={handleCancel}
                 >
-                    <Form layout="vertical">
+                    <Form layout="vertical" form={form}>
                         <Form.Item
-                            label="Name"
-                            name="name"
-                            rules={[{ required: true, message: 'Please input a valid album name!' }]}
+                            label="Author"
+                            name="author"
+                            rules={[{ required: true, message: 'Please input the author name!' }]}
                         >
                             <Input />
+                        </Form.Item>
+                        <Form.Item
+                            label="Tags"
+                            name="tags"
+                            rules={[{ required: true, message: 'Please select tags!' }]}
+                        >
+                            <Select mode="multiple" placeholder="Select tags">
+                                <Option value="tag1">Tag1</Option>
+                                <Option value="tag2">Tag2</Option>
+                                <Option value="tag3">Tag3</Option>
+                                <Option value="tag4">Tag4</Option>
+                            </Select>
                         </Form.Item>
                     </Form>
                 </Modal>
@@ -156,7 +199,14 @@ const AlbumComponent = () => {
                                 className="avatar-uploader"
                                 showUploadList={false}
                                 action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
-                                beforeUpload={beforeUpload}
+                                beforeUpload={(file) => {
+                                    setPendingFile(file);
+                                    if (!author || tags.length === 0) {
+                                        setPromptVisible(true);
+                                        return Upload.LIST_IGNORE;
+                                    }
+                                    return beforeUpload(file);
+                                }}
                                 onChange={handleImgUpload}
                             >
                                 {uploadButton}
@@ -180,7 +230,7 @@ const AlbumComponent = () => {
                                         }
                                     }}
                                 >
-                                    <Skeleton.Image active={sketlonActive} className='w-full h-full' />
+                                    <Skeleton.Image active={skeletonActive} className='w-full h-full' />
                                 </motion.li>
                             ))
                         ) : (
@@ -189,7 +239,6 @@ const AlbumComponent = () => {
                                     layout
                                     key={"image-" + image.id}
                                     id={"image-" + image.id}
-                                    // layoutId={image.id}
                                     className='relative items-stretch aspect-square rounded-md'
                                     initial={{
                                         opacity: 0
@@ -198,7 +247,7 @@ const AlbumComponent = () => {
                                         opacity: 1,
                                         transition: {
                                             duration: 0.5,
-                                            delay: (uploadedImage === image.image_url) ? 0 : Math.max(0.15 * index, 1) // If the image is the uploaded one, it must not have any delay
+                                            delay: (uploadedImage === image.image_url) ? 0 : Math.max(0.15 * index, 1)
                                         }
                                     }}
                                     transition={{
@@ -213,7 +262,6 @@ const AlbumComponent = () => {
                                 >
                                     <div className='w-full h-full object-cover rounded-md'>
                                         <img
-
                                             src={`${image.image_url}`}
                                             alt="Uploaded"
                                             className='w-full h-full object-cover rounded-md'
@@ -261,16 +309,32 @@ const AlbumComponent = () => {
                     </AnimatePresence>
                 </ul>
             </div>
-            {/* <AnimatePresence> */}
-                {selectedImgID && (
-                    <motion.div
-                        // layoutId={selectedImgID}
-                        className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75"
+            
+            {selectedImgID && (
+                <motion.div
+                    className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75"
+                    initial={{ opacity: 0 }}
+                    animate={{ 
+                        opacity: 1,
+                        transition: {
+                            duration: 0.2
+                        }
+                    }}
+                    exit={{ 
+                        opacity: 0,
+                        transition: {
+                            duration: 0.2
+                        }
+                    }}
+                >
+                    <motion.div 
+                        className="w-full h-full bg-transparent p-4 rounded-md flex flex-col items-center justify-center"
                         initial={{ opacity: 0 }}
                         animate={{ 
                             opacity: 1,
                             transition: {
-                                duration: 0.2
+                                duration: 0.4,
+                                delay: 0.2
                             }
                         }}
                         exit={{ 
@@ -280,93 +344,108 @@ const AlbumComponent = () => {
                             }
                         }}
                     >
-                        <motion.div 
-                            className="w-full h-full bg-transparent p-4 rounded-md flex flex-col items-center justify-center"
-                            initial={{ opacity: 0 }}
-                            animate={{ 
-                                opacity: 1,
-                                transition: {
-                                    duration: 0.4,
-                                    delay: 0.2
-                                }
-                            }}
-                            exit={{ 
-                                opacity: 0,
-                                transition: {
-                                    duration: 0.2
-                                }
-                            }}
-                        >
-                            <div className="flex justify-between p-4 h-full w-full items-center">
+                        <div className="flex justify-between p-4 h-full w-full items-center">
+                            <motion.button
+                                className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
+                                onClick={() => setSelectedImgID(null)}
+                            >
+                                <XMarkIcon width={25} height={25} />
+                            </motion.button>
+                        </div>
+                        <motion.img
+                            src={images.find(image => image.id === selectedImgID)?.image_url}
+                            alt="Selected"
+                            className='max-h-[80%] object-contain aspect-square rounded-md'
+                        />
+                        <div className="flex justify-center p-4 h-full w-full items-center">
+                            <div className='rounded-full bg-opacity-50 bg-gray-600 p-4 justify-center items-center flex'>
                                 <motion.button
-                                    className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
-                                    onClick={() => setSelectedImgID(null)}
+                                    className={`${images.findIndex(image => image.id === selectedImgID) === 0 ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
+                                    onClick={() => 
+                                        setSelectedImgID(
+                                            images.findIndex(image => image.id === selectedImgID) - 1 >= 0 ? 
+                                                images[images.findIndex(image => image.id === selectedImgID) - 1].id 
+                                                : 
+                                                selectedImgID
+                                        )
+                                    }
                                 >
-                                    <XMarkIcon width={25} height={25} />
+                                    <ChevronLeftIcon width={25} height={25} />
+                                </motion.button>
+                                <motion.button
+                                    className="text-gray-400 px-4 py-2 rounded"
+                                    whileHover={{
+                                        color: 'white',
+                                        transition: {
+                                            duration: 0.2
+                                        }
+                                    }}
+                                    onClick={() => handleDeleteImage(selectedImgID)}
+                                >
+                                    <TrashIconOutlined width={25} height={25} />
+                                </motion.button>
+                                <motion.button
+                                    className="text-gray-400 px-4 py-2 rounded"
+                                    whileHover={{
+                                        color: 'white',
+                                        transition: {
+                                            duration: 0.2
+                                        }
+                                    }}
+                                >
+                                    <ArrowDownTrayIcon width={25} height={25} />
+                                </motion.button>
+                                <motion.button
+                                    className={`${images.findIndex(image => image.id === selectedImgID) + 1 === images.length ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
+                                    onClick={() => 
+                                        setSelectedImgID(
+                                            images.findIndex(image => image.id === selectedImgID) + 1 < images.length ? 
+                                                images[images.findIndex(image => image.id === selectedImgID) + 1].id
+                                                : 
+                                                selectedImgID
+                                        )
+                                    }
+                                >
+                                    <ChevronRightIcon width={25} height={25} />
                                 </motion.button>
                             </div>
-                            <motion.img
-                                src={images.find(image => image.id === selectedImgID)?.image_url}
-                                alt="Selected"
-                                className='max-h-[80%] object-contain aspect-square rounded-md'
-                            />
-                            <div className="flex justify-center p-4 h-full w-full items-center">
-                                <div className='rounded-full bg-opacity-50 bg-gray-600 p-4 justify-center items-center flex'>
-                                    <motion.button
-                                        className={`${images.findIndex(image => image.id === selectedImgID) === 0 ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
-                                        onClick={() => 
-                                            setSelectedImgID(
-                                                images.findIndex(image => image.id === selectedImgID) - 1 >= 0 ? 
-                                                    images[images.findIndex(image => image.id === selectedImgID) - 1].id 
-                                                    : 
-                                                    selectedImgID
-                                            )
-                                        }
-                                    >
-                                        <ChevronLeftIcon width={25} height={25} />
-                                    </motion.button>
-                                    <motion.button
-                                        className="text-gray-400 px-4 py-2 rounded"
-                                        whileHover={{
-                                            color: 'white',
-                                            transition: {
-                                                duration: 0.2
-                                            }
-                                        }}
-                                        onClick={() => handleDeleteImage(selectedImgID)}
-                                    >
-                                        <TrashIconOutlined width={25} height={25} />
-                                    </motion.button>
-                                    <motion.button
-                                        className="text-gray-400 px-4 py-2 rounded"
-                                        whileHover={{
-                                            color: 'white',
-                                            transition: {
-                                                duration: 0.2
-                                            }
-                                        }}
-                                    >
-                                        <ArrowDownTrayIcon width={25} height={25} />
-                                    </motion.button>
-                                    <motion.button
-                                        className={`${images.findIndex(image => image.id === selectedImgID) + 1 === images.length ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
-                                        onClick={() => 
-                                            setSelectedImgID(
-                                                images.findIndex(image => image.id === selectedImgID) + 1 < images.length ? 
-                                                    images[images.findIndex(image => image.id === selectedImgID) + 1].id
-                                                    : 
-                                                    selectedImgID
-                                            )
-                                        }
-                                    >
-                                        <ChevronRightIcon width={25} height={25} />
-                                    </motion.button>
-                                </div>
-                            </div>
-                        </motion.div>
+                        </div>
                     </motion.div>
-                )}
-            {/* </AnimatePresence> */}
+                </motion.div>
+            )}
+
+            {/* Prompt for author and tags */}
+            <Modal
+                title="Enter Author Name and Tags"
+                visible={promptVisible}
+                onOk={handlePromptSubmit}
+                onCancel={() => setPromptVisible(false)}
+                okText="Submit"
+            >
+                <Form form={form} layout="vertical">
+                    <Form.Item
+                        label="Author"
+                        name="author"
+                        rules={[{ required: true, message: 'Please input the author name!' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+                    <Form.Item
+                        label="Tags"
+                        name="tags"
+                        rules={[{ required: true, message: 'Please select tags!' }]}
+                    >
+                        <Select mode="multiple" placeholder="Select tags">
+                            <Option value="tag1">Tag1</Option>
+                            <Option value="tag2">Tag2</Option>
+                            <Option value="tag3">Tag3</Option>
+                            <Option value="tag4">Tag4</Option>
+                        </Select>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            
         </div>
     );
 };
