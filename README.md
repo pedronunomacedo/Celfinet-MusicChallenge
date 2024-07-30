@@ -6,7 +6,7 @@ The purpose of this challenge is to create an online gallery platform where each
 
 ## Technologies and Frameworks
 
-<div style="display: flex;">
+<div style="display: flex; flex-direciton: row;">
     <div style="display: flex; flex-direction: row; align-items: center;">
         <img src="https://github.com/user-attachments/assets/99560f1f-0389-4011-bde1-6a5e6095f471" width="100" height="100"  />
         <div>
