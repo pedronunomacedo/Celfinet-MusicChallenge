@@ -2,6 +2,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from backend.backend.settings import client_id
 from backend.backend.settings import client_secret
+import random
 
 
 def search_spotify(string):
@@ -14,7 +15,9 @@ def search_spotify(string):
     
     # Extract and print the URIs
     uris = [track['uri'] for track in results['tracks']['items']]
-    return uris
+     
+
+    return uris[randomn]
 
 
 
