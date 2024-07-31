@@ -336,134 +336,110 @@ const AlbumComponent = () => {
             </div>
             
             {selectedImgID && (
-                <motion.div
-                    className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75"
-                    initial={{ opacity: 0 }}
-                    animate={{ 
-                        opacity: 1,
-                        transition: {
-                            duration: 0.2
-                        }
-                    }}
-                    exit={{ 
-                        opacity: 0,
-                        transition: {
-                            duration: 0.2
-                        }
-                    }}
+    <motion.div
+        className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75"
+        initial={{ opacity: 0 }}
+        animate={{ 
+            opacity: 1,
+            transition: {
+                duration: 0.2
+            }
+        }}
+        exit={{ 
+            opacity: 0,
+            transition: {
+                duration: 0.2
+            }
+        }}
+    >
+        <motion.div 
+            className="w-full h-full bg-transparent p-4 rounded-md flex flex-col items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ 
+                opacity: 1,
+                transition: {
+                    duration: 0.4,
+                    delay: 0.2
+                }
+            }}
+            exit={{ 
+                opacity: 0,
+                transition: {
+                    duration: 0.2
+                }
+            }}
+        >
+            <div className="flex justify-between p-4 h-full w-full items-center">
+                <motion.button
+                    className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
+                    onClick={() => setSelectedImgID(null)}
                 >
-                    <motion.div 
-                        className="w-full h-full bg-transparent p-4 rounded-md flex flex-col items-center justify-center"
-                        initial={{ opacity: 0 }}
-                        animate={{ 
-                            opacity: 1,
-                            transition: {
-                                duration: 0.4,
-                                delay: 0.2
-                            }
-                        }}
-                        exit={{ 
-                            opacity: 0,
+                    <XMarkIcon width={25} height={25} />
+                </motion.button>
+            </div>
+            <motion.img
+                src={images.find(image => image.id === selectedImgID)?.image_url}
+                alt="Selected"
+                className='max-h-[80%] object-contain aspect-square rounded-md'
+            />
+            <div className="flex justify-center p-4 h-full w-full items-center">
+                <div className='rounded-full bg-opacity-50 bg-gray-600 p-4 justify-center items-center flex'>
+                    <motion.button
+                        className={`${images.findIndex(image => image.id === selectedImgID) === 0 ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
+                        onClick={() => 
+                            setSelectedImgID(
+                                images.findIndex(image => image.id === selectedImgID) - 1 >= 0 ? 
+                                    images[images.findIndex(image => image.id === selectedImgID) - 1].id 
+                                    : 
+                                    selectedImgID
+                            )
+                        }
+                    >
+                        <ChevronLeftIcon width={25} height={25} />
+                    </motion.button>
+                    <motion.button
+                        className="text-gray-400 px-4 py-2 rounded"
+                        whileHover={{
+                            color: 'white',
                             transition: {
                                 duration: 0.2
                             }
                         }}
+                        onClick={() => handleDeleteImage(selectedImgID)}
                     >
-                        <div className="flex justify-between p-4 h-full w-full items-center">
-                            <motion.button
-                                className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
-                                onClick={() => setSelectedImgID(null)}
-                            >
-                                <XMarkIcon width={25} height={25} />
-                            </motion.button>
-                        </div>
-                        <motion.img
-                            src={images.find(image => image.id === selectedImgID)?.image_url}
-                            alt="Selected"
-                            className='max-h-[80%] object-contain aspect-square rounded-md'
-                        />
-                        <div className="flex justify-center p-4 h-full w-full items-center">
-                            <div className='rounded-full bg-opacity-50 bg-gray-600 p-4 justify-center items-center flex'>
-                                <motion.button
-                                    className={`${images.findIndex(image => image.id === selectedImgID) === 0 ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
-                                    onClick={() => 
-                                        setSelectedImgID(
-                                            images.findIndex(image => image.id === selectedImgID) - 1 >= 0 ? 
-                                                images[images.findIndex(image => image.id === selectedImgID) - 1].id 
-                                                : 
-                                                selectedImgID
-                                        )
-                                    }
-                                >
-                                    <ChevronLeftIcon width={25} height={25} />
-                                </motion.button>
-                                <motion.button
-                                    className="text-gray-400 px-4 py-2 rounded"
-                                    whileHover={{
-                                        color: 'white',
-                                        transition: {
-                                            duration: 0.2
-                                        }
-                                    >
-                                        <ChevronLeftIcon width={25} height={25} />
-                                    </motion.button>
-                                    <motion.button
-                                        className="text-gray-400 px-4 py-2 rounded"
-                                        whileHover={{
-                                            color: 'white',
-                                            transition: {
-                                                duration: 0.2
-                                            }
-                                        }}
-                                        onClick={() => handleDeleteImage(selectedImgID)}
-                                    >
-                                        <TrashIconOutlined width={25} height={25} />
-                                    </motion.button>
-                                    <motion.button
-                                        className="text-gray-400 px-4 py-2 rounded"
-                                        whileHover={{
-                                            color: 'white',
-                                            transition: {
-                                                duration: 0.2
-                                            }
-                                        }}
-                                        onClick={() => handleDownload(selectedImgID)}
-                                    >
-                                        <ArrowDownTrayIcon width={25} height={25} />
-                                    </motion.button>
-                                    <motion.button
-                                        className={`${images.findIndex(image => image.id === selectedImgID) + 1 === images.length ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
-                                        onClick={() => 
-                                            setSelectedImgID(
-                                                images.findIndex(image => image.id === selectedImgID) + 1 < images.length ? 
-                                                    images[images.findIndex(image => image.id === selectedImgID) + 1].id
-                                                    : 
-                                                    selectedImgID
-                                            )
-                                        }
-                                    }}
-                                >
-                                    <ArrowDownTrayIcon width={25} height={25} />
-                                </motion.button>
-                                <motion.button
-                                    className={`${images.findIndex(image => image.id === selectedImgID) + 1 === images.length ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
-                                    onClick={() => 
-                                        setSelectedImgID(
-                                            images.findIndex(image => image.id === selectedImgID) + 1 < images.length ? 
-                                                images[images.findIndex(image => image.id === selectedImgID) + 1].id
-                                                : 
-                                                selectedImgID
-                                        )
-                                    }
-                                >
-                                    <ChevronRightIcon width={25} height={25} />
-                                </motion.button>
-                            </div>
-                        </div>
-                    </motion.div>
-                </motion.div>
-            )}
-    
+                        <TrashIconOutlined width={25} height={25} />
+                    </motion.button>
+                    <motion.button
+                        className="text-gray-400 px-4 py-2 rounded"
+                        whileHover={{
+                            color: 'white',
+                            transition: {
+                                duration: 0.2
+                            }
+                        }}
+                        onClick={() => handleDownload(selectedImgID)}
+                    >
+                        <ArrowDownTrayIcon width={25} height={25} />
+                    </motion.button>
+                    <motion.button
+                        className={`${images.findIndex(image => image.id === selectedImgID) + 1 === images.length ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
+                        onClick={() => 
+                            setSelectedImgID(
+                                images.findIndex(image => image.id === selectedImgID) + 1 < images.length ? 
+                                    images[images.findIndex(image => image.id === selectedImgID) + 1].id
+                                    : 
+                                    selectedImgID
+                            )
+                        }
+                    >
+                        <ChevronRightIcon width={25} height={25} />
+                    </motion.button>
+                </div>
+            </div>
+        </motion.div>
+    </motion.div>
+)}
+  
             <Modal
                 title="Enter Author Name and Tags"
                 visible={promptVisible}
