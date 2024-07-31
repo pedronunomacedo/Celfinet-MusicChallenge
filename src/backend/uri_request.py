@@ -15,7 +15,7 @@ def search_spotify(string):
     
     # Extract and print the URIs
     uris = [track['uri'] for track in results['tracks']['items']]
-     
+    randomn = random.randint(0, 9)
 
     return uris[randomn]
 
