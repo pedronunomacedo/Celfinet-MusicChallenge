@@ -1,0 +1,16 @@
+.header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f0f2f5; /* Light grey background */
+}
+
+.header-title {
+    font-size: 2rem;
+    color: #4a90e2; /* Greyesque blue */
+    margin-right: auto;
+}
+
+.header-nav {
+    /* Styles for future navigation items */
+}
