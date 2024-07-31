@@ -18,3 +18,10 @@ class ObjectIdField(serializers.Field):
 
     def to_internal_value(self, data):
         return ObjectId(data)
+    
+class FileUploadSerializer(serializers.Serializer):
+    file = serializers.FileField()
+
+    def create(self, validated_data):
+        # Implement your file save logic here
+        return validated_data

@@ -69,7 +69,7 @@ export const uploadImage = async (imageFile) => {
         let formData = new FormData();
         formData.append('image', imageFile);
 
-        const response = await fetch(`/api/images/upload/`, {
+        const response = await fetch(`/api/aws-files/upload/`, {
             method: 'POST',
             headers: {
                 'Authorization': `<user-token>` // Add the user token for more security and privacy
@@ -99,7 +99,7 @@ export const deleteImage = async (imageId) => {
     console.log("Deleting image with id: ", imageId);
 
     try {
-        const response = await fetch(`/api/images/delete/`, {
+        const response = await fetch(`/api/aws-files/delete/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
