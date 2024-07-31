@@ -114,6 +114,25 @@ const AlbumComponent = () => {
         }
     };
 
+    const handleDownload = async (imageID) => {
+        const image = images.find((image) => image.id === imageID);
+    
+        const downloadLinkElem = document.createElement("a");
+        let downloadUrl = image.download_url;
+
+        // Dynamically generate the downloadPart based on the image name
+        const encodedFileName = encodeURIComponent(image.name);
+        const downloadPart = `&response-content-disposition=attachment%3B%20filename%3D${encodedFileName}`;
+        downloadUrl += downloadPart;
+
+        downloadLinkElem.href = downloadUrl;
+        downloadLinkElem.download = image.name;
+
+        document.body.appendChild(downloadLinkElem); // Required for Firefox
+        downloadLinkElem.click();
+        document.body.removeChild(downloadLinkElem);
+    };
+
     return (
         <div className='w-full items-center justify-center'>
             {loading && <p>Loading...</p>}
@@ -345,6 +364,7 @@ const AlbumComponent = () => {
                                                 duration: 0.2
                                             }
                                         }}
+                                        onClick={() => handleDownload(selectedImgID)}
                                     >
                                         <ArrowDownTrayIcon width={25} height={25} />
                                     </motion.button>

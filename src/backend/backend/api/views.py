@@ -80,19 +80,17 @@ class ImageViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
             creation_datetime = self.extract_exif_data(image_file)
-                        
+            
             
             if creation_datetime:
                 image_instance = Image(image=image_file, creation_date=creation_datetime)
                 image_instance.save()
                 serializer = ImageSerializer(data=image_instance)
-                logger.info(f"2) Image upload successfully!")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 image_instance = Image(image=image_file)
                 image_instance.save()
                 serializer = ImageSerializer(data=image_instance)
-                logger.info(f"2) Image upload successfully!")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
                 
         except Exception as e:
@@ -113,12 +111,6 @@ class ImageViewSet(viewsets.ModelViewSet):
                 return Response({"detail": "No image ID provided."}, status=status.HTTP_400_BAD_REQUEST)
             
             image_instance = Image.objects.get(pk=ObjectId(image_id))
-            
-            image_path = image_instance.image.path  # Assuming 'image' is the field name for the image file
-            
-            # Delete the image file from the folder
-            if os.path.exists(image_path):
-                os.remove(image_path)
 
             # Delete the image record from the database
             image_instance.delete()

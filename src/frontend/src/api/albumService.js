@@ -99,7 +99,7 @@ export const deleteImage = async (imageId) => {
     console.log("Deleting image with id: ", imageId);
 
     try {
-        const response = await fetch(`/api/images/delete/`, {
+        const response = await fetch(`/api/aws-files/delete/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
