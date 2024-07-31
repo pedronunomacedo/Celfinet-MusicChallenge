@@ -147,6 +147,25 @@ const AlbumComponent = () => {
         }
     };
 
+    const handleDownload = async (imageID) => {
+        const image = images.find((image) => image.id === imageID);
+    
+        const downloadLinkElem = document.createElement("a");
+        let downloadUrl = image.download_url;
+
+        // Dynamically generate the downloadPart based on the image name
+        const encodedFileName = encodeURIComponent(image.name);
+        const downloadPart = `&response-content-disposition=attachment%3B%20filename%3D${encodedFileName}`;
+        downloadUrl += downloadPart;
+
+        downloadLinkElem.href = downloadUrl;
+        downloadLinkElem.download = image.name;
+
+        document.body.appendChild(downloadLinkElem); // Required for Firefox
+        downloadLinkElem.click();
+        document.body.removeChild(downloadLinkElem);
+    };
+
     return (
         <div className='w-full items-center justify-center'>
             {/* Include the header component */}
@@ -385,17 +404,42 @@ const AlbumComponent = () => {
                                         transition: {
                                             duration: 0.2
                                         }
-                                    }}
-                                    onClick={() => handleDeleteImage(selectedImgID)}
-                                >
-                                    <TrashIconOutlined width={25} height={25} />
-                                </motion.button>
-                                <motion.button
-                                    className="text-gray-400 px-4 py-2 rounded"
-                                    whileHover={{
-                                        color: 'white',
-                                        transition: {
-                                            duration: 0.2
+                                    >
+                                        <ChevronLeftIcon width={25} height={25} />
+                                    </motion.button>
+                                    <motion.button
+                                        className="text-gray-400 px-4 py-2 rounded"
+                                        whileHover={{
+                                            color: 'white',
+                                            transition: {
+                                                duration: 0.2
+                                            }
+                                        }}
+                                        onClick={() => handleDeleteImage(selectedImgID)}
+                                    >
+                                        <TrashIconOutlined width={25} height={25} />
+                                    </motion.button>
+                                    <motion.button
+                                        className="text-gray-400 px-4 py-2 rounded"
+                                        whileHover={{
+                                            color: 'white',
+                                            transition: {
+                                                duration: 0.2
+                                            }
+                                        }}
+                                        onClick={() => handleDownload(selectedImgID)}
+                                    >
+                                        <ArrowDownTrayIcon width={25} height={25} />
+                                    </motion.button>
+                                    <motion.button
+                                        className={`${images.findIndex(image => image.id === selectedImgID) + 1 === images.length ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
+                                        onClick={() => 
+                                            setSelectedImgID(
+                                                images.findIndex(image => image.id === selectedImgID) + 1 < images.length ? 
+                                                    images[images.findIndex(image => image.id === selectedImgID) + 1].id
+                                                    : 
+                                                    selectedImgID
+                                            )
                                         }
                                     }}
                                 >
