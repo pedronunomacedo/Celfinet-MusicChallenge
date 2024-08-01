@@ -1,6 +1,7 @@
 
 import logging
 import boto3
+from boto3.s3.transfer import TransferConfig
 from bson import ObjectId
 import uuid 
 import json
@@ -19,7 +20,6 @@ from django.utils import timezone
 from .serializers import ImageSerializer
 from django.http import JsonResponse
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
-
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -66,12 +66,6 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
         image_author = request.data.get('author')
         image_tags = request.data.get('tags', [])
         
-        logger.info('-------------')
-        logger.info(image_file)
-        logger.info(image_author)
-        logger.info(image_tags)
-        logger.info('-------------')
-        
         # Parse tags from JSON string
         try:
             image_tags = json.loads(image_tags)
@@ -101,6 +95,7 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
             unique_filename = f"{uuid.uuid4()}_{image_file.name}"
             image_url = f"https://{bucket_name}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
             
+            image_file.seek(0)  # Ensure we're at the start of the file
             s3.upload_fileobj(
                 image_file.file,
                 bucket_name,
@@ -123,25 +118,17 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
             if creation_datetime:
                 object_data['creation_date'] = creation_datetime
             
-            logger.info("TEST001!")
             serializer = ImageSerializer(data=object_data)
-            logger.info("TEST002!")
             if serializer.is_valid():
-                logger.info("TEST003!")
                 image_instance = serializer.save()
-                logger.info("TEST004!")
                 
                 # Handle many-to-many relationships
                 for tag_name in image_tags:
-                    logger.info("TEST005!")
                     tag, created = Tag.objects.get_or_create(name=tag_name)
-                    logger.info("TEST006!")
                     if created:
                         logger.info(f"Tag '{tag_name}' created.")
                     image_instance.tags.add(tag)
-                    logger.info("TEST007!")
                 
-                logger.info("TEST008!")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
