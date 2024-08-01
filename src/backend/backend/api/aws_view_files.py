@@ -100,7 +100,7 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
             creation_datetime = self.extract_exif_data(image_file)
             unique_filename = f"{uuid.uuid4()}_{image_file.name}"
             image_url = f"https://{bucket_name}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
-
+            
             s3.upload_fileobj(
                 image_file.file,
                 bucket_name,

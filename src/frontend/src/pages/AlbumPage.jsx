@@ -317,7 +317,7 @@ const AlbumComponent = () => {
                                         initial={{ opacity: 0 }}
                                         whileHover={{ opacity: 1 }}
                                     >
-                                        <ul className='flex flex-row space-x-2'>
+                                        <ul className='flex flex-row space'>
                                             <motion.li
                                                 className='w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer'
                                                 whileHover={{
@@ -388,45 +388,47 @@ const AlbumComponent = () => {
                             }
                         }}
                     >
-                        <div className="flex justify-between p-4 h-full w-full items-center">
-                            <motion.button
-                                className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
-                                onClick={() => {
-                                    setSelectedImgID(null);
-                                    setImageMusicInfo(null);
-                                }}
-                            >
-                                <XMarkIcon width={25} height={25} />
-                            </motion.button>
-                        </div>
-                        <div id="image-tags" className='space-x-2'>
-                            {images.find(image => image.id === selectedImgID).tags.map((tag, index) => {
-                                return (
-                                    <motion.span
-                                        key={tag.id}
-                                        initial={{
-                                            opacity: 0
-                                        }}
-                                        animate={{
-                                            opacity: 1,
-                                            transition: {
-                                                duration: 0.3,
-                                                delay: 0.3 * index
-                                            }
-                                        }}
-                                    >
-                                        <Tag color={tag.color}>{tag.name}</Tag>
-                                    </motion.span>
-                                );
-                            })}
-                        </div>
-                        <div id="music-player">
-                            <MusicPlayer image={images.find(image => image.id === selectedImgID)} tags={images.find(image => image.id === selectedImgID).tags.map(tag => tag.name)} />
+                        <div className="flex flex-col justify-center p-4 h-full w-full items-center">
+                            <div className='w-full'>
+                                <motion.button
+                                    className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
+                                    onClick={() => {
+                                        setSelectedImgID(null);
+                                        setImageMusicInfo(null);
+                                    }}
+                                >
+                                    <XMarkIcon width={25} height={25} />
+                                </motion.button>
+                                <div id="image-tags" className='space-x-2 flex items-center justify-center'>
+                                    {images.find(image => image.id === selectedImgID).tags.map((tag, index) => {
+                                        return (
+                                            <motion.span
+                                                key={tag.id}
+                                                initial={{
+                                                    opacity: 0
+                                                }}
+                                                animate={{
+                                                    opacity: 1,
+                                                    transition: {
+                                                        duration: 0.3,
+                                                        delay: 0.3 * index
+                                                    }
+                                                }}
+                                            >
+                                                <Tag color={tag.color}>{tag.name}</Tag>
+                                            </motion.span>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div id="music-player">
+                                <MusicPlayer image={images.find(image => image.id === selectedImgID)} tags={images.find(image => image.id === selectedImgID).tags.map(tag => tag.name)} />
+                            </div>
                         </div>
                         <motion.img
                             src={images.find(image => image.id === selectedImgID)?.image_url}
                             alt="Selected"
-                            className='max-h-[80%] object-contain aspect-square rounded-md'
+                            className='max-h-[70%] object-contain aspect-square rounded-md'
                         />
                         <div className="flex justify-center p-4 h-full w-full items-center">
                             <div className='rounded-full bg-opacity-50 bg-gray-600 p-4 justify-center items-center flex'>

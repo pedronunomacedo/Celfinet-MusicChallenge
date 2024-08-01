@@ -30,42 +30,63 @@ const MusicPlayer = ({ image, tags }) => {
     }, [image.tags]); // Add dependencies to re-run the effect if image.tags change
 
     useEffect(() => {
-        if (audioRef.current) {
-            if (isPlaying) {
-                audioRef.current.play().catch(error => {
+        const handleAutoplay = async () => {
+            if (audioRef.current && isPlaying) {
+                try {
+                    await audioRef.current.play();
+                } catch (error) {
                     console.error('Error playing audio:', error);
-                });
-            } else {
-                audioRef.current.pause();
+                }
+            } else if (!isPlaying) {
+                try {
+                    await audioRef.current.pause();
+                } catch (error) {
+                    console.error('Error pausing audio:', error);
+                }
             }
-        }
+        };
+
+        handleAutoplay();
     }, [isPlaying]); // Add isPlaying as a dependency to manage playback
 
     const handlePlayPause = () => {
         setIsPlaying(prev => !prev);
     };
 
+    const handleCanPlayThrough = () => {
+        // Automatically start playback when the audio is ready
+        if (isPlaying && audioRef.current) {
+            audioRef.current.play().catch(error => {
+                console.error('Error starting playback:', error);
+            });
+        }
+    };
+
     if (loading) {
-        return <span className='text-lg'>Loading...</span>;
+        return (
+            <span className='text-lg'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle fill="#FF156D" stroke="#FF156D" stroke-width="7" r="15" cx="40" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.4"></animate></circle><circle fill="#FF156D" stroke="#FF156D" stroke-width="7" r="15" cx="100" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.2"></animate></circle><circle fill="#FF156D" stroke="#FF156D" stroke-width="7" r="15" cx="160" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="0"></animate></circle></svg>
+            </span>
+        );
     }
 
     return (
-        <div className='flex flex-row space-x-4'>    
+        <div className='flex flex-row space-y-3'>    
             <audio
                 ref={audioRef}
                 src={musicInfo.preview_url || ''}
                 id='myaudio'
-                onCanPlayThrough={() => {
-                    // Automatically start playback when the audio is ready
-                    if (!isPlaying) {
-                        audioRef.current.play().catch(error => {
-                            console.error('Error starting playback:', error);
-                        });
-                    }
-                }}
+                onCanPlayThrough={handleCanPlayThrough}
+                // onCanPlayThrough={() => {
+                //     // Automatically start playback when the audio is ready
+                //     if (!isPlaying) {
+                //         audioRef.current.play().catch(error => {
+                //             console.error('Error starting playback:', error);
+                //         });
+                //     }
+                // }}
             />
-            <div className={`track-animation ${isPlaying ? 'playing' : ''}`}></div>
-            <button onClick={handlePlayPause}>
+            <button onClick={handlePlayPause} className='mr-4'>
                 <AnimatePresence mode='wait'>
                     {isPlaying ? (
                         <motion.div
