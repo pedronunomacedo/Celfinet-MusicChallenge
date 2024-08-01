@@ -1,14 +1,16 @@
 
 import React, { useEffect, useState } from 'react';
-import { fetchAlbums, createAlbum, fetchImages, deleteImage, uploadImage } from '../api/albumService'; // Adjust the import path as necessary
-import { DefaultBtn } from '../components/Buttons/DefaultBtn';
-import { Form, Input, Modal, Upload, Skeleton, message, Select } from 'antd';
+import { fetchAlbums, createAlbum, fetchImages, deleteImage, uploadImage, searchMusicQuery } from '../api/albumService.js'; // Adjust the import path as necessary
+import { DefaultBtn } from '../components/Buttons/DefaultBtn.js';
+import { Form, Input, Modal, Upload, Skeleton, message, Select, Button, Tag } from 'antd';
 import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
 import { AnimatePresence, motion } from "framer-motion";
-import { TrashIcon as TrashIconOutlined, EyeIcon, CheckCircleIcon, XMarkIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { TrashIcon as TrashIconOutlined, EyeIcon, CheckCircleIcon, XMarkIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
 import './AlbumPage.css';
 import Header from '../Header.js';
+import { TagInput } from '../components/Tag/TagInput.jsx';
+import MusicPlayer from '../components/MusicPlayer/MusicPlayer.jsx';
 
 const { Option } = Select;
 
@@ -45,6 +47,9 @@ const AlbumComponent = () => {
     const [tags, setTags] = useState([]);
     const [promptVisible, setPromptVisible] = useState(false);
     const [pendingFile, setPendingFile] = useState(null);
+    const [uploadedImageInfo, setUploadedImageInfo] = useState(null);
+
+    const [imageMusicInfo, setImageMusicInfo] = useState(null);
 
     const [form] = Form.useForm();
 
@@ -92,50 +97,42 @@ const AlbumComponent = () => {
 
     const handleCancel = () => {
         setIsModalOpen(false);
+        form.resetFields();
+        setTags([]);
     };
 
     const handleImgUpload = async (info) => {
-        if (info.file.status === 'uploading') {
-            setUploadingImage(true);
-            return;
-        }
-
-        let response = await uploadImage(info.file.originFileObj);
-
-        if (response.status === 201) {
-            setImages((prevImages) => [...prevImages, response.data]);
-            setUploadingImage(false);
-            setUploadedImage(response.data.image_url);
-        }
-    };
-
-    const handleUploadButtonClick = async () => {
-        setPromptVisible(true);
+        setUploadedImageInfo(info);
     };
 
     const handlePromptSubmit = () => {
         form.validateFields()
-            .then((values) => {
+            .then(async (values) => {
                 setAuthor(values.author);
-                setTags(values.tags);
-                setPromptVisible(false);
 
-                if (pendingFile) {
-                    handleImgUpload({ file: pendingFile });
-                    setPendingFile(null);
+                async function sendData() {
+                    let response = await uploadImage(uploadedImageInfo.file.originFileObj, values.author, tags);
+                    return response;
+                };
+
+                let responseData = await sendData();
+
+                if (responseData.status === 201) {
+                    // show a popup toaster
+                    message.success('Image uploaded successfully!');
+
+                    setImages((prevImages) => [...prevImages, responseData.data]);
+                    setUploadingImage(false);
+                    setUploadedImage(responseData.data.image_url);
+                    setPromptVisible(false);
+                    form.resetFields();
+                    setTags([]);
                 }
             })
             .catch((info) => {
                 console.log('Validate Failed:', info);
             });
     };
-
-    const uploadButton = (
-        <div onClick={handleUploadButtonClick} style={{ border: 0, background: 'none', cursor: 'pointer' }}>
-            {uploadingImage ? <LoadingOutlined /> : <PlusOutlined />}
-            <div style={{ marginTop: 8 }}>Upload</div>
-        </div>
-    );
 
     const handleDeleteImage = async (imageID) => {
         const response = await deleteImage(imageID);
@@ -147,9 +144,15 @@ const AlbumComponent = () => {
         }
     };
 
+    const handleModalCancel = () => {
+        setPromptVisible(false)
+        form.resetFields();
+        setTags([]);
+    };
+
     const handleDownload = async (imageID) => {
         const image = images.find((image) => image.id === imageID);
-    
+
         const downloadLinkElem = document.createElement("a");
         let downloadUrl = image.download_url;
 
@@ -166,17 +169,21 @@ const AlbumComponent = () => {
         document.body.removeChild(downloadLinkElem);
     };
 
+    const handleSelectedImage = async (imageID, tags) => {
+        setSelectedImgID(imageID);
+    };
+
     return (
         <div className='w-full items-center justify-center'>
             {/* Include the header component */}
             <Header />
-    
+
             {/* Rest of your existing code */}
             {loading && <p>Loading...</p>}
-    
+
             <div id="album-creation-popup">
                 <DefaultBtn onClick={showModal} title="Create album" />
-    
+
                 <Modal
                     title="Create album"
                     open={isModalOpen}
@@ -196,47 +203,59 @@ const AlbumComponent = () => {
                             name="tags"
                             rules={[{ required: true, message: 'Please select tags!' }]}
                         >
-                            <Select mode="multiple" placeholder="Select tags">
-                                <Option value="tag1">Tag1</Option>
-                                <Option value="tag2">Tag2</Option>
-                                <Option value="tag3">Tag3</Option>
-                                <Option value="tag4">Tag4</Option>
-                            </Select>
+                            <TagInput tags={tags} setTags={setTags} />
                         </Form.Item>
                     </Form>
                 </Modal>
             </div>
-    
+
             <ul>
                 {albums.map(album => (
                     <li key={album.id}>{album.title} by {album.creator}</li>
                 ))}
             </ul>
-    
+
             <div className='w-5/6 h-full mx-auto space-y-3'>
                 <h2 className='font-semibold text-2xl text-gray-800'>All photos</h2>
                 <ul id='images-list' className='grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-2'>
                     <AnimatePresence mode='popLayout'>
-                        <li className='w-full aspect-square rounded-md' id="upload photo">
-                            <Upload
+                        <motion.li
+                            id="upload photo"
+                            className='w-full aspect-square cursor-pointer bg-gray-100 rounded-md'
+                            initial={{
+                                border: '2px dashed #9ca3af',
+                            }}
+                            whileHover={{
+                                border: '2px dashed #6879de',
+                                transition: {
+                                    duration: 0.5,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }
+                            }}
+                            onClick={setPromptVisible}
+                        >
+                            <div
                                 name="avatar"
-                                listType="picture-card"
-                                className="avatar-uploader"
-                                showUploadList={false}
-                                action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
-                                beforeUpload={(file) => {
-                                    setPendingFile(file);
-                                    if (!author || tags.length === 0) {
-                                        setPromptVisible(true);
-                                        return Upload.LIST_IGNORE;
-                                    }
-                                    return beforeUpload(file);
-                                }}
-                                onChange={handleImgUpload}
+                                className="avatar-uploader flex flex-col items-center justify-center"
+                            // listType="picture-card"
+                            // onClick={handleUploadButtonClick}
+                            // showUploadList={false}
+                            // action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
+                            // beforeUpload={(file) => {
+                            //     setPendingFile(file);
+                            //     if (!author || tags.length === 0) {
+                            //         setPromptVisible(true);
+                            //         return Upload.LIST_IGNORE;
+                            //     }
+                            //     return beforeUpload(file);
+                            // }}
+                            // onChange={handleImgUpload}
                             >
-                                {uploadButton}
-                            </Upload>
-                        </li>
+                                {/* {uploadButton} */}
+                                <PlusOutlined />
+                                <div style={{ marginTop: 8 }}>Upload</div>
+                            </div>
+                        </motion.li>
                         {loading ? (
                             Array.from({ length: 7 }).map((_, index) => (
                                 <motion.li
@@ -278,7 +297,7 @@ const AlbumComponent = () => {
                                     transition={{
                                         type: 'spring',
                                         stiffness: 100,
-                                        damping: 20, 
+                                        damping: 20,
                                         duration: 0.6
                                     }}
                                     exit={{
@@ -304,7 +323,7 @@ const AlbumComponent = () => {
                                                 whileHover={{
                                                     backgroundColor: 'rgba(255, 255, 255, 0.2)'
                                                 }}
-                                                onClick={() => setSelectedImgID(image.id)}
+                                                onClick={() => handleSelectedImage(image.id)}
                                             >
                                                 <EyeIcon width={25} height={25} />
                                             </motion.li>
@@ -322,7 +341,7 @@ const AlbumComponent = () => {
                                                 whileHover={{
                                                     backgroundColor: 'rgba(255, 255, 255, 0.2)'
                                                 }}
-    
+
                                             >
                                                 <CheckCircleIcon width={25} height={25} />
                                             </motion.li>
@@ -334,120 +353,151 @@ const AlbumComponent = () => {
                     </AnimatePresence>
                 </ul>
             </div>
-            
+
             {selectedImgID && (
-    <motion.div
-        className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75"
-        initial={{ opacity: 0 }}
-        animate={{ 
-            opacity: 1,
-            transition: {
-                duration: 0.2
-            }
-        }}
-        exit={{ 
-            opacity: 0,
-            transition: {
-                duration: 0.2
-            }
-        }}
-    >
-        <motion.div 
-            className="w-full h-full bg-transparent p-4 rounded-md flex flex-col items-center justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ 
-                opacity: 1,
-                transition: {
-                    duration: 0.4,
-                    delay: 0.2
-                }
-            }}
-            exit={{ 
-                opacity: 0,
-                transition: {
-                    duration: 0.2
-                }
-            }}
-        >
-            <div className="flex justify-between p-4 h-full w-full items-center">
-                <motion.button
-                    className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
-                    onClick={() => setSelectedImgID(null)}
+                <motion.div
+                    className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75"
+                    initial={{ opacity: 0 }}
+                    animate={{
+                        opacity: 1,
+                        transition: {
+                            duration: 0.2
+                        }
+                    }}
+                    exit={{
+                        opacity: 0,
+                        transition: {
+                            duration: 0.2
+                        }
+                    }}
                 >
-                    <XMarkIcon width={25} height={25} />
-                </motion.button>
-            </div>
-            <motion.img
-                src={images.find(image => image.id === selectedImgID)?.image_url}
-                alt="Selected"
-                className='max-h-[80%] object-contain aspect-square rounded-md'
-            />
-            <div className="flex justify-center p-4 h-full w-full items-center">
-                <div className='rounded-full bg-opacity-50 bg-gray-600 p-4 justify-center items-center flex'>
-                    <motion.button
-                        className={`${images.findIndex(image => image.id === selectedImgID) === 0 ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
-                        onClick={() => 
-                            setSelectedImgID(
-                                images.findIndex(image => image.id === selectedImgID) - 1 >= 0 ? 
-                                    images[images.findIndex(image => image.id === selectedImgID) - 1].id 
-                                    : 
-                                    selectedImgID
-                            )
-                        }
-                    >
-                        <ChevronLeftIcon width={25} height={25} />
-                    </motion.button>
-                    <motion.button
-                        className="text-gray-400 px-4 py-2 rounded"
-                        whileHover={{
-                            color: 'white',
+                    <motion.div
+                        className="w-full h-full bg-transparent p-4 rounded-md flex flex-col items-center justify-center space-y-6"
+                        initial={{ opacity: 0 }}
+                        animate={{
+                            opacity: 1,
+                            transition: {
+                                duration: 0.4,
+                                delay: 0.2
+                            }
+                        }}
+                        exit={{
+                            opacity: 0,
                             transition: {
                                 duration: 0.2
                             }
                         }}
-                        onClick={() => handleDeleteImage(selectedImgID)}
                     >
-                        <TrashIconOutlined width={25} height={25} />
-                    </motion.button>
-                    <motion.button
-                        className="text-gray-400 px-4 py-2 rounded"
-                        whileHover={{
-                            color: 'white',
-                            transition: {
-                                duration: 0.2
-                            }
-                        }}
-                        onClick={() => handleDownload(selectedImgID)}
-                    >
-                        <ArrowDownTrayIcon width={25} height={25} />
-                    </motion.button>
-                    <motion.button
-                        className={`${images.findIndex(image => image.id === selectedImgID) + 1 === images.length ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
-                        onClick={() => 
-                            setSelectedImgID(
-                                images.findIndex(image => image.id === selectedImgID) + 1 < images.length ? 
-                                    images[images.findIndex(image => image.id === selectedImgID) + 1].id
-                                    : 
-                                    selectedImgID
-                            )
-                        }
-                    >
-                        <ChevronRightIcon width={25} height={25} />
-                    </motion.button>
-                </div>
-            </div>
-        </motion.div>
-    </motion.div>
-)}
-  
+                        <div className="flex justify-between p-4 h-full w-full items-center">
+                            <motion.button
+                                className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
+                                onClick={() => {
+                                    setSelectedImgID(null);
+                                    setImageMusicInfo(null);
+                                }}
+                            >
+                                <XMarkIcon width={25} height={25} />
+                            </motion.button>
+                        </div>
+                        <div id="image-tags" className='space-x-2'>
+                            {images.find(image => image.id === selectedImgID).tags.map((tag, index) => {
+                                return (
+                                    <motion.span
+                                        key={tag.id}
+                                        initial={{
+                                            opacity: 0
+                                        }}
+                                        animate={{
+                                            opacity: 1,
+                                            transition: {
+                                                duration: 0.3,
+                                                delay: 0.3 * index
+                                            }
+                                        }}
+                                    >
+                                        <Tag color={tag.color}>{tag.name}</Tag>
+                                    </motion.span>
+                                );
+                            })}
+                        </div>
+                        <div id="music-player">
+                            <MusicPlayer image={images.find(image => image.id === selectedImgID)} tags={images.find(image => image.id === selectedImgID).tags.map(tag => tag.name)} />
+                        </div>
+                        <motion.img
+                            src={images.find(image => image.id === selectedImgID)?.image_url}
+                            alt="Selected"
+                            className='max-h-[80%] object-contain aspect-square rounded-md'
+                        />
+                        <div className="flex justify-center p-4 h-full w-full items-center">
+                            <div className='rounded-full bg-opacity-50 bg-gray-600 p-4 justify-center items-center flex'>
+                                <motion.button
+                                    className={`${images.findIndex(image => image.id === selectedImgID) === 0 ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
+                                    onClick={() =>
+                                        setSelectedImgID(
+                                            images.findIndex(image => image.id === selectedImgID) - 1 >= 0 ?
+                                                images[images.findIndex(image => image.id === selectedImgID) - 1].id
+                                                :
+                                                selectedImgID
+                                        )
+                                    }
+                                >
+                                    <ChevronLeftIcon width={25} height={25} />
+                                </motion.button>
+                                <motion.button
+                                    className="text-gray-400 px-4 py-2 rounded"
+                                    whileHover={{
+                                        color: 'white',
+                                        transition: {
+                                            duration: 0.2
+                                        }
+                                    }}
+                                    onClick={() => handleDeleteImage(selectedImgID)}
+                                >
+                                    <TrashIconOutlined width={25} height={25} />
+                                </motion.button>
+                                <motion.button
+                                    className="text-gray-400 px-4 py-2 rounded"
+                                    whileHover={{
+                                        color: 'white',
+                                        transition: {
+                                            duration: 0.2
+                                        }
+                                    }}
+                                    onClick={() => handleDownload(selectedImgID)}
+                                >
+                                    <ArrowDownTrayIcon width={25} height={25} />
+                                </motion.button>
+                                <motion.button
+                                    className={`${images.findIndex(image => image.id === selectedImgID) + 1 === images.length ? 'text-gray-400' : 'text-white'} px-4 py-2 rounded`}
+                                    onClick={() =>
+                                        setSelectedImgID(
+                                            images.findIndex(image => image.id === selectedImgID) + 1 < images.length ?
+                                                images[images.findIndex(image => image.id === selectedImgID) + 1].id
+                                                :
+                                                selectedImgID
+                                        )
+                                    }
+                                >
+                                    <ChevronRightIcon width={25} height={25} />
+                                </motion.button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+
             <Modal
-                title="Enter Author Name and Tags"
-                visible={promptVisible}
+                title="Upload image"
+                open={promptVisible}
                 onOk={handlePromptSubmit}
-                onCancel={() => setPromptVisible(false)}
+                onCancel={handleModalCancel}
                 okText="Submit"
             >
-                <Form form={form} layout="vertical">
+                <Form
+                    layout="vertical"
+                    form={form}
+                    autoComplete="off"
+                >
                     <Form.Item
                         label="Author"
                         name="author"
@@ -458,23 +508,32 @@ const AlbumComponent = () => {
                     <Form.Item
                         label="Tags"
                         name="tags"
-                        rules={[{ required: true, message: 'Please select tags!' }]}
+                        rules={[{ required: false }]}
                     >
-                        <Select mode="multiple" placeholder="Select tags">
-                            <Option value="tag1">Tag1</Option>
-                            <Option value="tag2">Tag2</Option>
-                            <Option value="tag3">Tag3</Option>
-                            <Option value="tag4">Tag4</Option>
-                        </Select>
+                        <TagInput tags={tags} setTags={setTags} />
+                    </Form.Item>
+                    <Form.Item
+                        label="Image"
+                        name="image"
+                        rules={[{ required: true, message: 'Please upload an image' }]}
+                    >
+                        <Upload
+                            name='file'
+                            onChange={handleImgUpload}
+                            accept="image/png, image/jpeg, image/jpg"
+                            maxCount={1}
+                        >
+                            <Button icon={<ArrowUpTrayIcon />}>Click to Upload</Button>
+                        </Upload>
                     </Form.Item>
                 </Form>
             </Modal>
-            
-    
-            
+
+
+
         </div>
     );
-    
+
 };
 
 export default AlbumComponent;

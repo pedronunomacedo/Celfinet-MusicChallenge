@@ -3,6 +3,7 @@ import logging
 import boto3
 from bson import ObjectId
 import uuid 
+import json
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import viewsets, permissions, status
@@ -10,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import AWSS3Service, Image
+from .models import AWSS3Service, Image, Tag
 from PIL import Image as PilImage
 from PIL.ExifTags import TAGS
 from datetime import datetime
@@ -62,6 +63,24 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='upload')
     def uploadAWSFile(self, request, *args, **kwargs):
         image_file = request.FILES.get('image')
+        image_author = request.data.get('author')
+        image_tags = request.data.get('tags', [])
+        
+        logger.info('-------------')
+        logger.info(image_file)
+        logger.info(image_author)
+        logger.info(image_tags)
+        logger.info('-------------')
+        
+        # Parse tags from JSON string
+        try:
+            image_tags = json.loads(image_tags)
+        except json.JSONDecodeError:
+            return Response({"error": "Invalid tags format"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not image_author:
+            return Response({"detail": "No author provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not image_file:
             return Response({"detail": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
                 
@@ -97,15 +116,32 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
             object_data = {
                 'image_url': image_url,
                 'name': unique_filename,
-                'download_url': download_url
+                'download_url': download_url,
+                'tags': []
             }
 
             if creation_datetime:
                 object_data['creation_date'] = creation_datetime
             
+            logger.info("TEST001!")
             serializer = ImageSerializer(data=object_data)
+            logger.info("TEST002!")
             if serializer.is_valid():
-                serializer.save()
+                logger.info("TEST003!")
+                image_instance = serializer.save()
+                logger.info("TEST004!")
+                
+                # Handle many-to-many relationships
+                for tag_name in image_tags:
+                    logger.info("TEST005!")
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    logger.info("TEST006!")
+                    if created:
+                        logger.info(f"Tag '{tag_name}' created.")
+                    image_instance.tags.add(tag)
+                    logger.info("TEST007!")
+                
+                logger.info("TEST008!")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

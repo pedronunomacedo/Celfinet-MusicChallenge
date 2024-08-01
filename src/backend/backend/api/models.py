@@ -1,6 +1,6 @@
 import os
 import logging
-from djongo import models
+from django.db import models
 from PIL import Image as PilImage
 from PIL.ExifTags import TAGS
 from bson import ObjectId
@@ -9,6 +9,7 @@ from django.utils import timezone
 from dotenv import load_dotenv
 import boto3
 from django.conf import settings
+import random
 
 # Load environment variables from .env file
 load_dotenv()
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 class Album(models.Model):
+    id = models.CharField(max_length=24, primary_key=True, default=ObjectId, editable=False)
     title = models.CharField(max_length=100)
     creator = models.CharField(max_length=100)
     creation_date = models.DateField(auto_now_add=True)
@@ -35,9 +37,23 @@ class Album(models.Model):
 def generate_object_id():
     return str(ObjectId())
 
+def generate_random_color():
+    existing_colors = set(Tag.objects.values_list('color', flat=True))
+    while True:
+        color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+        if color not in existing_colors:
+            return color
+
+class Tag(models.Model):
+    id = models.CharField(max_length=24, primary_key=True, default=generate_object_id, editable=True)
+    name = models.CharField(max_length=100, unique=True)
+    color = models.CharField(max_length=100, unique=True, default=generate_random_color)
+    
+    def __str__(self):
+        return self.name
+
 class Image(models.Model):
-    # id = models.ObjectIdField(primary_key=True, default=ObjectId, editable=False)
-    id = models.CharField(max_length=24, primary_key=True, default=generate_object_id)
+    id = models.CharField(max_length=24, primary_key=True, default=generate_object_id, editable=True)
     image = models.ImageField(
         upload_to='post_images',
         blank=True,
@@ -46,14 +62,20 @@ class Image(models.Model):
     creation_date = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     image_url = models.CharField(max_length=600, default=f"https://{os.getenv('AWS_STORAGE_BUCKET_NAME', 'your-bucket-name')}.s3.amazonaws.com/default_images/default_camera_icon.png")
     download_url = models.CharField(max_length=600, default=f"https://{os.getenv('AWS_STORAGE_BUCKET_NAME', 'your-bucket-name')}.s3.amazonaws.com/default_images/default_camera_icon.png")
-    name=models.CharField(max_length=100, default="default_camera_icon.png")
+    name = models.CharField(max_length=100, default="default_camera_icon.png")
+    tags = models.ManyToManyField(Tag, related_name='images', default=[])  # Many-to-many relationship with Tag Model
     
     def __str__(self):
-        return f"Image(id={self.id}, creation_date={self.creation_date})"        
+        return f"Image(id={self.id}, creation_date={self.creation_date})"      
+    
+    # Deletes all tags that don't have any user associate with them
+    def delete(self, *args, **kwargs):
+        tags = list(self.tags.all())
+        super().delete(*args, **kwargs)
+        for tag in tags:
+            if not tag.images.exists():
+                tag.delete()
 
-# Configure logging
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 class AWSS3Service:
     def __init__(self):

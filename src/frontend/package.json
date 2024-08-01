@@ -1,6 +1,6 @@
 {
   "name": "app",
-  "proxy": "http://127.0.0.1:8000",
+  "proxy": "http://localhost:8000",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -11,6 +11,7 @@
     "antd": "^5.19.3",
     "base-64": "^1.0.0",
     "framer-motion": "^11.3.19",
+    "rc-tween-one": "^3.0.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.25.1",
