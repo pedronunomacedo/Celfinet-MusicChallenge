@@ -31,3 +31,7 @@
     flex-direction: row;
     background: transparent;
 }
+
+.marquee-text-paused {
+    animation-play-state: paused;
+}

@@ -10,6 +10,7 @@ const MusicPlayer = ({ image, tags }) => {
     const [loading, setLoading] = useState(true);
     
     const audioRef = useRef(null);
+    const marqueeRef = useRef(null);
 
     useEffect(() => {
         const fetchMusic = async () => {
@@ -34,12 +35,14 @@ const MusicPlayer = ({ image, tags }) => {
             if (audioRef.current && isPlaying) {
                 try {
                     await audioRef.current.play();
+                    marqueeRef.current.style.animationPlayState = 'running';
                 } catch (error) {
                     console.error('Error playing audio:', error);
                 }
             } else if (!isPlaying) {
                 try {
                     await audioRef.current.pause();
+                    marqueeRef.current.style.animationPlayState = 'paused';
                 } catch (error) {
                     console.error('Error pausing audio:', error);
                 }
@@ -56,8 +59,12 @@ const MusicPlayer = ({ image, tags }) => {
     const handleCanPlayThrough = () => {
         // Automatically start playback when the audio is ready
         if (isPlaying && audioRef.current) {
-            audioRef.current.play().catch(error => {
+            audioRef.current.play()
+            .catch(error => {
                 console.error('Error starting playback:', error);
+            })
+            .finally(() => {
+                marqueeRef.current.style.animationPlayState = 'running';
             });
         }
     };
@@ -86,7 +93,18 @@ const MusicPlayer = ({ image, tags }) => {
                 //     }
                 // }}
             />
-            <button onClick={handlePlayPause} className='mr-4'>
+            <motion.button 
+                onClick={handlePlayPause} className='mr-4'
+                initial={{
+                    scale: 1
+                }}
+                whileHover={{
+                    scale: 1.1,
+                    transition: {
+                        duration: 0.2
+                    }
+                }}
+            >
                 <AnimatePresence mode='wait'>
                     {isPlaying ? (
                         <motion.div
@@ -108,9 +126,12 @@ const MusicPlayer = ({ image, tags }) => {
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </button>
+            </motion.button>
             <div className="relative text-nowrap overflow-hidden w-20">
-                <div className="marquee-text border-r-2 border-l-2 border-opacity-5 border-transparent">
+                <div 
+                    ref={marqueeRef}
+                    className={`marquee-text ${!isPlaying ? 'marquee-text-paused' : ''} border-r-2 border-l-2 border-opacity-5 border-transparent`}
+                >
                     <span className='font-semibold text-gray-200'>{musicInfo.music_info.music_name}</span><br />
                     <span className='font-medium text-gray-400'>{musicInfo.music_artists.map(artist => artist.artist_name).join(', ')}</span>
                 </div>
