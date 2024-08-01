@@ -10,6 +10,7 @@ import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/sol
 
 import './AlbumPage.css';
 import Header from '../Header.js';
+import Footer from '../Footer.js';
 import { TagInput } from '../components/Tag/TagInput.jsx';
 import MusicPlayer from '../components/MusicPlayer/MusicPlayer.jsx';
 
@@ -192,39 +193,10 @@ const AlbumComponent = () => {
 
     return (
         <div className='w-full items-center justify-center'>
-            {/* Include the header component */}
             <Header />
 
             {/* Rest of your existing code */}
             {loading && <p>Loading...</p>}
-
-            <div id="album-creation-popup">
-                <DefaultBtn onClick={showModal} title="Create album" />
-
-                <Modal
-                    title="Create album"
-                    open={isModalOpen}
-                    onOk={handleCreate} okText="Create"
-                    onCancel={handleCancel}
-                >
-                    <Form layout="vertical" form={form}>
-                        <Form.Item
-                            label="Author"
-                            name="author"
-                            rules={[{ required: true, message: 'Please input the author name!' }]}
-                        >
-                            <Input />
-                        </Form.Item>
-                        <Form.Item
-                            label="Tags"
-                            name="tags"
-                            rules={[{ required: true, message: 'Please select tags!' }]}
-                        >
-                            <TagInput tags={tags} setTags={setTags} />
-                        </Form.Item>
-                    </Form>
-                </Modal>
-            </div>
 
             <ul>
                 {albums.map(album => (
@@ -541,10 +513,36 @@ const AlbumComponent = () => {
                     </Form.Item>
                 </Form>
             </Modal>
+            <div id="album-creation-popup">
+                <DefaultBtn onClick={showModal} title="Create album" />
 
-
-
+                <Modal
+                    title="Create album"
+                    open={isModalOpen}
+                    onOk={handleCreate} okText="Create"
+                    onCancel={handleCancel}
+                >
+                    <Form layout="vertical" form={form}>
+                        <Form.Item
+                            label="Author"
+                            name="author"
+                            rules={[{ required: true, message: 'Please input the author name!' }]}
+                        >
+                            <Input />
+                        </Form.Item>
+                        <Form.Item
+                            label="Tags"
+                            name="tags"
+                            rules={[{ required: true, message: 'Please select tags!' }]}
+                        >
+                            <TagInput tags={tags} setTags={setTags} />
+                        </Form.Item>
+                    </Form>
+                </Modal>
+            </div>
+            <Footer/>
         </div>
+        
     );
 
 };

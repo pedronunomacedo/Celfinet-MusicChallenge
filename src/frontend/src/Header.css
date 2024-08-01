@@ -1,16 +1,20 @@
 .header {
-    display: flex;
-    align-items: center;
-    padding: 1rem;
-    background-color: #f0f2f5; /* Light grey background */
+    text-align: center;
+    padding: 50px;
+    font-family: 'Roboto', sans-serif;
 }
 
 .header-title {
-    font-size: 2rem;
-    color: #4a90e2; /* Greyesque blue */
-    margin-right: auto;
+    font-size: 54px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
 }
 
-.header-nav {
-    /* Styles for future navigation items */
+.header-subtitle {
+    font-size: 32px;
+    color: #666;
+    margin: auto auto 0 auto;
+    border-bottom: 1px solid #666;
+    padding-bottom: 50px;
 }
