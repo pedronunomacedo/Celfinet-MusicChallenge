@@ -6,6 +6,7 @@ import { Form, Input, Modal, Upload, Skeleton, message, Select, Button, Tag } fr
 import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
 import { AnimatePresence, motion } from "framer-motion";
 import { TrashIcon as TrashIconOutlined, EyeIcon, CheckCircleIcon, XMarkIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid';
 
 import './AlbumPage.css';
 import Header from '../Header.js';
@@ -50,8 +51,9 @@ const AlbumComponent = () => {
     const [uploadedImageInfo, setUploadedImageInfo] = useState(null);
 
     const [imageMusicInfo, setImageMusicInfo] = useState(null);
-
     const [form] = Form.useForm();
+
+    const [selectedImgs, setSelectedImgs] = useState(new Set());
 
     useEffect(() => {
         const loadAlbums = async () => {
@@ -99,6 +101,20 @@ const AlbumComponent = () => {
         setIsModalOpen(false);
         form.resetFields();
         setTags([]);
+    };
+
+    const handleImageSelection = (imageID) => {
+        console.log("selectedImgs: ", selectedImgs);
+        console.log("imageID: ", imageID);
+        if (selectedImgs[imageID] === undefined) {
+            setSelectedImgs(prevSelectedImgs => new Set(prevSelectedImgs).add(imageID));
+        } else {
+            setSelectedImgs(prevSelectedImgs => {
+                const newSet = new Set(prevSelectedImgs);
+                newSet.delete(imageID);
+                return newSet;
+            });
+        }
     };
 
     const handleImgUpload = async (info) => {
@@ -169,7 +185,8 @@ const AlbumComponent = () => {
         document.body.removeChild(downloadLinkElem);
     };
 
-    const handleSelectedImage = async (imageID, tags) => {
+    const handleSelectedImage = (imageID) => {
+        console.log('handleSelectedImage:', imageID);
         setSelectedImgID(imageID);
     };
 
@@ -237,21 +254,7 @@ const AlbumComponent = () => {
                             <div
                                 name="avatar"
                                 className="avatar-uploader flex flex-col items-center justify-center"
-                            // listType="picture-card"
-                            // onClick={handleUploadButtonClick}
-                            // showUploadList={false}
-                            // action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
-                            // beforeUpload={(file) => {
-                            //     setPendingFile(file);
-                            //     if (!author || tags.length === 0) {
-                            //         setPromptVisible(true);
-                            //         return Upload.LIST_IGNORE;
-                            //     }
-                            //     return beforeUpload(file);
-                            // }}
-                            // onChange={handleImgUpload}
                             >
-                                {/* {uploadButton} */}
                                 <PlusOutlined />
                                 <div style={{ marginTop: 8 }}>Upload</div>
                             </div>
@@ -318,33 +321,41 @@ const AlbumComponent = () => {
                                         whileHover={{ opacity: 1 }}
                                     >
                                         <ul className='flex flex-row space'>
-                                            <motion.li
-                                                className='w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer'
-                                                whileHover={{
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.2)'
-                                                }}
-                                                onClick={() => handleSelectedImage(image.id)}
-                                            >
-                                                <EyeIcon width={25} height={25} />
-                                            </motion.li>
-                                            <motion.li
-                                                className='w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer'
-                                                whileHover={{
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.2)'
-                                                }}
-                                                onClick={() => handleDeleteImage(image.id)}
-                                            >
-                                                <TrashIconOutlined width={25} height={25} />
-                                            </motion.li>
-                                            <motion.li
-                                                className='w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer'
-                                                whileHover={{
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.2)'
-                                                }}
-
-                                            >
-                                                <CheckCircleIcon width={25} height={25} />
-                                            </motion.li>
+                                            <AnimatePresence mode='sync'>
+                                                <motion.li
+                                                    className={`w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer ${selectedImgs[image.id] ? 'hidden' : 'block'}`}
+                                                    whileHover={{
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                                                    }}
+                                                    onClick={() => handleSelectedImage(image.id)}
+                                                >
+                                                    <EyeIcon width={25} height={25} />
+                                                </motion.li>
+                                                <motion.li
+                                                    className={`w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer ${selectedImgs[image.id] ? 'hidden' : 'block'}`}
+                                                    whileHover={{
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                                                    }}
+                                                    onClick={() => handleDeleteImage(image.id)}
+                                                >
+                                                    <TrashIconOutlined width={25} height={25} />
+                                                </motion.li>
+                                                <motion.li
+                                                    className='w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer'
+                                                    whileHover={{
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                                                    }}
+                                                    onClick={() => handleImageSelection(image.id)}  
+                                                >
+                                                    <AnimatePresence mode="popLayout">
+                                                        {(selectedImgs[image.id]) ?
+                                                            <CheckCircleSolidIcon width={25} height={25} />
+                                                            :
+                                                            <CheckCircleIcon width={25} height={25} />
+                                                        }
+                                                    </AnimatePresence> 
+                                                </motion.li>
+                                            </AnimatePresence>
                                         </ul>
                                     </motion.div>
                                 </motion.li>
