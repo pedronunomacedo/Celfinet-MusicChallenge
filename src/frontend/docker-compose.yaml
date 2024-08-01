@@ -7,7 +7,7 @@ services:
       - '3000:3000'
     volumes:
       - .:/app
-      - .:/usr/src/app      # Add this in order not to rebuild the frontend container every time the frontend code changes (remove when deploying)
+      - .:/usr/src/app      # Add this in order to rebuild the frontend container every time the frontend code changes (remove when deployed)
     environment:
       FLASK_ENV: development
     networks:

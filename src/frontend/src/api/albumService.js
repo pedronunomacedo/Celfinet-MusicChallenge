@@ -64,10 +64,19 @@ export const createAlbum = async (albumData) => {
     }
 };
 
-export const uploadImage = async (imageFile) => {
+export const uploadImage = async (imageFile, author, tags) => {
     try {
         let formData = new FormData();
+        formData.append('author', author);
+        formData.append('tags', JSON.stringify(tags));
         formData.append('image', imageFile);
+
+        // print all values inside formData
+        console.log("formData: ")
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ':'+ pair[1]); 
+        }
+        console.log("--------------------------");
 
         const response = await fetch(`/api/aws-files/upload/`, {
             method: 'POST',
@@ -125,5 +134,38 @@ export const deleteImage = async (imageId) => {
     } catch (error) {
         console.error('Error deleting image:', error);
         throw error;  // Rethrow the error to be handled by the caller
+    }
+};
+
+export const searchMusicQuery = async (query) => {
+    console.log("Searching music with query: ", query);
+
+    try {
+        const response = await fetch(`/api/spotify-api/search/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `<user-token>` // Add the user token for more security and privacy
+            },
+            body: JSON.stringify({
+                'search-query': query
+            })
+        });
+
+        if (!response.ok) {
+            // Log the response text for debugging
+            const errorText = await response.text();
+            console.error('Error searching music:', errorText);
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        return {
+            status: response.status,
+            data: responseData
+        };
+    } catch (error) {
+        console.error('Error searching music:', error);
+        throw error;  // Rethrow the error to be
     }
 };

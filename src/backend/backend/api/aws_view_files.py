@@ -1,8 +1,10 @@
 
 import logging
 import boto3
+from boto3.s3.transfer import TransferConfig
 from bson import ObjectId
 import uuid 
+import json
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import viewsets, permissions, status
@@ -10,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import AWSS3Service, Image
+from .models import AWSS3Service, Image, Tag
 from PIL import Image as PilImage
 from PIL.ExifTags import TAGS
 from datetime import datetime
@@ -18,7 +20,6 @@ from django.utils import timezone
 from .serializers import ImageSerializer
 from django.http import JsonResponse
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
-
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -62,6 +63,18 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='upload')
     def uploadAWSFile(self, request, *args, **kwargs):
         image_file = request.FILES.get('image')
+        image_author = request.data.get('author')
+        image_tags = request.data.get('tags', [])
+        
+        # Parse tags from JSON string
+        try:
+            image_tags = json.loads(image_tags)
+        except json.JSONDecodeError:
+            return Response({"error": "Invalid tags format"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not image_author:
+            return Response({"detail": "No author provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not image_file:
             return Response({"detail": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
                 
@@ -81,7 +94,8 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
             creation_datetime = self.extract_exif_data(image_file)
             unique_filename = f"{uuid.uuid4()}_{image_file.name}"
             image_url = f"https://{bucket_name}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
-
+            
+            image_file.seek(0)  # Ensure we're at the start of the file
             s3.upload_fileobj(
                 image_file.file,
                 bucket_name,
@@ -97,7 +111,8 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
             object_data = {
                 'image_url': image_url,
                 'name': unique_filename,
-                'download_url': download_url
+                'download_url': download_url,
+                'tags': []
             }
 
             if creation_datetime:
@@ -105,7 +120,15 @@ class AWSS3ViewSet(viewsets.ModelViewSet):
             
             serializer = ImageSerializer(data=object_data)
             if serializer.is_valid():
-                serializer.save()
+                image_instance = serializer.save()
+                
+                # Handle many-to-many relationships
+                for tag_name in image_tags:
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    if created:
+                        logger.info(f"Tag '{tag_name}' created.")
+                    image_instance.tags.add(tag)
+                
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

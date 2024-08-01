@@ -11,9 +11,8 @@ from PIL import Image as PilImage
 from PIL.ExifTags import TAGS
 from datetime import datetime
 from django.utils import timezone
-from .models import Album
-from .models import Image
-from .serializers import AlbumSerializer, ImageSerializer
+from .models import Album, Image, Tag
+from .serializers import AlbumSerializer, ImageSerializer, TagSerializer
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -68,12 +67,12 @@ class ImageViewSet(viewsets.ModelViewSet):
             # if not request.user.is_authenticated:
             #     return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
             
-
             image_file = request.FILES.get('image')
+            
             if not image_file:
                 return Response({"detail": "No image file provided."}, status=status.HTTP_400_BAD_REQUEST)
                         
-            existing_image = Image.objects.filter(image=image_file.name).first()
+            existing_image = Image.objects.filter(name=image_file.name).first()
             if existing_image:
                 logger.info("Duplicate image upload detected.")
                 serializer = ImageSerializer(existing_image)
@@ -81,15 +80,16 @@ class ImageViewSet(viewsets.ModelViewSet):
 
             creation_datetime = self.extract_exif_data(image_file)
             
-            
             if creation_datetime:
                 image_instance = Image(image=image_file, creation_date=creation_datetime)
                 image_instance.save()
+    
                 serializer = ImageSerializer(data=image_instance)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 image_instance = Image(image=image_file)
                 image_instance.save()
+                    
                 serializer = ImageSerializer(data=image_instance)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
                 
@@ -124,3 +124,8 @@ class ImageViewSet(viewsets.ModelViewSet):
             # Log the exception (you might use logging module instead of print in production)
             print(f"An error occurred: {e}")
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class TagViewSet(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [permissions.AllowAny] # Allow access to all users (comment this to add authentication security privacy)
