@@ -1,116 +1,27 @@
-
 import React, { useEffect, useState } from 'react';
-import { fetchAlbums, createAlbum, fetchImages, deleteImage, uploadImage, searchMusicQuery } from '../api/albumService.js'; // Adjust the import path as necessary
-import { DefaultBtn } from '../components/Buttons/DefaultBtn.js';
-import { Form, Input, Modal, Upload, Skeleton, message, Select, Button, Tag } from 'antd';
-import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
-import { AnimatePresence, motion } from "framer-motion";
-import { TrashIcon as TrashIconOutlined, EyeIcon, CheckCircleIcon, XMarkIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Skeleton, Tag } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid';
+import { useAlbums } from '../../contexts/AlbumsContext';
+import UploadImageModal from '../Modals/Images/UploadImageModal';
+import { TrashIcon as TrashIconOutlined, EyeIcon, CheckCircleIcon, XMarkIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { useImages } from '../../contexts/ImagesContext';
+import MusicPlayer from '../MusicPlayer/MusicPlayer.jsx';
 
-import './AlbumPage.css';
-import Header from '../Header.js';
-import Footer from '../Footer.js';
-import { TagInput } from '../components/Tag/TagInput.jsx';
-import MusicPlayer from '../components/MusicPlayer/MusicPlayer.jsx';
 
-const { Option } = Select;
-
-const getBase64 = (img, callback) => {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => callback(reader.result));
-    reader.readAsDataURL(img);
-};
-
-const beforeUpload = (file) => {
-    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-    if (!isJpgOrPng) {
-        message.error('You can only upload JPG/PNG file!');
-    }
-    const isLt2M = file.size / 1024 / 1024 < 10;
-    if (!isLt2M) {
-        message.error('Image must be smaller than 10MB!');
-    }
-    return isJpgOrPng && isLt2M;
-};
-
-const AlbumComponent = () => {
-    const [albums, setAlbums] = useState([]);
-    const [images, setImages] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const [uploadedImage, setUploadedImage] = useState('');
-    const [skeletonActive, setSkeletonActive] = useState(true);
-    const [selectedImgID, setSelectedImgID] = useState(null);
-
-    const [author, setAuthor] = useState('');
-    const [tags, setTags] = useState([]);
-    const [promptVisible, setPromptVisible] = useState(false);
-    const [pendingFile, setPendingFile] = useState(null);
-    const [uploadedImageInfo, setUploadedImageInfo] = useState(null);
-
-    const [imageMusicInfo, setImageMusicInfo] = useState(null);
-    const [form] = Form.useForm();
-
-    const [selectedImgs, setSelectedImgs] = useState(new Set());
-
-    useEffect(() => {
-        const loadAlbums = async () => {
-            try {
-                const albums = await fetchAlbums();
-                setAlbums(albums);
-                const images = await fetchImages();
-                setImages(images);
-            } catch (error) {
-                setError(error);
-            } finally {
-                setLoading(false);
-                setSkeletonActive(false);
-            }
-        };
-
-        loadAlbums();
-    }, []);
-
-    const handleCreateAlbum = async (values) => {
-        try {
-            const newAlbum = { title: 'New Album', creator: values.author, tags: values.tags };
-            const data = await createAlbum(newAlbum);
-            setAlbums([...albums, data]);
-        } catch (error) {
-            setError(error);
-        }
-    };
-
-    const showModal = () => {
-        setIsModalOpen(true);
-    };
-
-    const handleCreate = () => {
-        form.validateFields().then((values) => {
-            handleCreateAlbum(values);
-            setIsModalOpen(false);
-            form.resetFields();
-        }).catch((info) => {
-            console.log('Validate Failed:', info);
-        });
-    };
-
-    const handleCancel = () => {
-        setIsModalOpen(false);
-        form.resetFields();
-        setTags([]);
-    };
+const PhotosList = () => {
+    const [selectedImages, setSelectedImages] = (new Set());
+    const { selectedImgID, setSelectedImgID, deleteImage, images, loadingImages } = useImages(null);
 
     const handleImageSelection = (imageID) => {
-        console.log("selectedImgs: ", selectedImgs);
+        console.log("selectedImgs: ", selectedImages);
         console.log("imageID: ", imageID);
-        if (selectedImgs[imageID] === undefined) {
-            setSelectedImgs(prevSelectedImgs => new Set(prevSelectedImgs).add(imageID));
+
+        if (selectedImages && selectedImages[imageID] === undefined) {
+            setSelectedImages(prevSelectedImgs => new Set(prevSelectedImgs).add(imageID));
         } else {
-            setSelectedImgs(prevSelectedImgs => {
+            setSelectedImages(prevSelectedImgs => {
                 const newSet = new Set(prevSelectedImgs);
                 newSet.delete(imageID);
                 return newSet;
@@ -118,53 +29,9 @@ const AlbumComponent = () => {
         }
     };
 
-    const handleImgUpload = async (info) => {
-        setUploadedImageInfo(info);
-    };
-
-    const handlePromptSubmit = () => {
-        form.validateFields()
-            .then(async (values) => {
-                setAuthor(values.author);
-
-                async function sendData() {
-                    let response = await uploadImage(uploadedImageInfo.file.originFileObj, values.author, tags);
-                    return response;
-                };
-
-                let responseData = await sendData();
-
-                if (responseData.status === 201) {
-                    // show a popup toaster
-                    message.success('Image uploaded successfully!');
-
-                    setImages((prevImages) => [...prevImages, responseData.data]);
-                    setUploadingImage(false);
-                    setUploadedImage(responseData.data.image_url);
-                    setPromptVisible(false);
-                    form.resetFields();
-                    setTags([]);
-                }
-            })
-            .catch((info) => {
-                console.log('Validate Failed:', info);
-            });
-    };
-
-    const handleDeleteImage = async (imageID) => {
-        const response = await deleteImage(imageID);
-
-        if (response.status === 200) {
-            const updatedImages = images.filter((image) => image.id !== imageID);
-            setImages(updatedImages);
-            setSelectedImgID(null);
-        }
-    };
-
-    const handleModalCancel = () => {
-        setPromptVisible(false)
-        form.resetFields();
-        setTags([]);
+    const handleSelectedImage = (imageID) => {
+        console.log('handleSelectedImage:', imageID);
+        setSelectedImgID(imageID);
     };
 
     const handleDownload = async (imageID) => {
@@ -186,52 +53,14 @@ const AlbumComponent = () => {
         document.body.removeChild(downloadLinkElem);
     };
 
-    const handleSelectedImage = (imageID) => {
-        console.log('handleSelectedImage:', imageID);
-        setSelectedImgID(imageID);
-    };
-
     return (
-        <div className='w-full items-center justify-center'>
-            <Header />
-
-            {/* Rest of your existing code */}
-            {loading && <p>Loading...</p>}
-
-            <ul>
-                {albums.map(album => (
-                    <li key={album.id}>{album.title} by {album.creator}</li>
-                ))}
-            </ul>
-
-            <div className='w-5/6 h-full mx-auto space-y-3'>
+        <>
+            <div id="all-photos-section">
                 <h2 className='font-semibold text-2xl text-gray-800'>All photos</h2>
                 <ul id='images-list' className='grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-2'>
                     <AnimatePresence mode='popLayout'>
-                        <motion.li
-                            id="upload photo"
-                            className='w-full aspect-square cursor-pointer bg-gray-100 rounded-md'
-                            initial={{
-                                border: '2px dashed #9ca3af',
-                            }}
-                            whileHover={{
-                                border: '2px dashed #6879de',
-                                transition: {
-                                    duration: 0.5,
-                                    ease: [0.4, 0, 0.2, 1]
-                                }
-                            }}
-                            onClick={setPromptVisible}
-                        >
-                            <div
-                                name="avatar"
-                                className="avatar-uploader flex flex-col items-center justify-center"
-                            >
-                                <PlusOutlined />
-                                <div style={{ marginTop: 8 }}>Upload</div>
-                            </div>
-                        </motion.li>
-                        {loading ? (
+                        <UploadImageModal />
+                        {loadingImages ? (
                             Array.from({ length: 7 }).map((_, index) => (
                                 <motion.li
                                     key={index}
@@ -249,7 +78,7 @@ const AlbumComponent = () => {
                                         }
                                     }}
                                 >
-                                    <Skeleton.Image active={skeletonActive} className='w-full h-full' />
+                                    <Skeleton.Image active={loadingImages} className='w-full h-full' />
                                 </motion.li>
                             ))
                         ) : (
@@ -266,7 +95,7 @@ const AlbumComponent = () => {
                                         opacity: 1,
                                         transition: {
                                             duration: 0.5,
-                                            delay: (uploadedImage === image.image_url) ? 0 : Math.max(0.15 * index, 1)
+                                            delay: (index === images.length - 1) ? 0 : Math.max(0.15 * index, 1)
                                         }
                                     }}
                                     transition={{
@@ -295,7 +124,7 @@ const AlbumComponent = () => {
                                         <ul className='flex flex-row space'>
                                             <AnimatePresence mode='sync'>
                                                 <motion.li
-                                                    className={`w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer ${selectedImgs[image.id] ? 'hidden' : 'block'}`}
+                                                    className={`w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer ${selectedImages && selectedImages[image.id] ? 'hidden' : 'block'}`}
                                                     whileHover={{
                                                         backgroundColor: 'rgba(255, 255, 255, 0.2)'
                                                     }}
@@ -304,11 +133,11 @@ const AlbumComponent = () => {
                                                     <EyeIcon width={25} height={25} />
                                                 </motion.li>
                                                 <motion.li
-                                                    className={`w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer ${selectedImgs[image.id] ? 'hidden' : 'block'}`}
+                                                    className={`w-[35px] h-[35px] rounded-full flex items-center justify-center cursor-pointer ${selectedImages && selectedImages[image.id] ? 'hidden' : 'block'}`}
                                                     whileHover={{
                                                         backgroundColor: 'rgba(255, 255, 255, 0.2)'
                                                     }}
-                                                    onClick={() => handleDeleteImage(image.id)}
+                                                    onClick={() => deleteImage(image.id)}
                                                 >
                                                     <TrashIconOutlined width={25} height={25} />
                                                 </motion.li>
@@ -317,15 +146,15 @@ const AlbumComponent = () => {
                                                     whileHover={{
                                                         backgroundColor: 'rgba(255, 255, 255, 0.2)'
                                                     }}
-                                                    onClick={() => handleImageSelection(image.id)}  
+                                                    onClick={() => handleImageSelection(image.id)}
                                                 >
                                                     <AnimatePresence mode="popLayout">
-                                                        {(selectedImgs[image.id]) ?
+                                                        {(selectedImages && selectedImages[image.id]) ?
                                                             <CheckCircleSolidIcon width={25} height={25} />
                                                             :
                                                             <CheckCircleIcon width={25} height={25} />
                                                         }
-                                                    </AnimatePresence> 
+                                                    </AnimatePresence>
                                                 </motion.li>
                                             </AnimatePresence>
                                         </ul>
@@ -336,6 +165,9 @@ const AlbumComponent = () => {
                     </AnimatePresence>
                 </ul>
             </div>
+
+
+
 
             {selectedImgID && (
                 <motion.div
@@ -377,7 +209,6 @@ const AlbumComponent = () => {
                                     className="absolute top-[15px] right-[15px] bg-opacity-40 bg-gray-700 text-white px-4 py-4 rounded-full"
                                     onClick={() => {
                                         setSelectedImgID(null);
-                                        setImageMusicInfo(null);
                                     }}
                                 >
                                     <XMarkIcon width={25} height={25} />
@@ -436,7 +267,7 @@ const AlbumComponent = () => {
                                             duration: 0.2
                                         }
                                     }}
-                                    onClick={() => handleDeleteImage(selectedImgID)}
+                                    onClick={() => deleteImage(selectedImgID)}
                                 >
                                     <TrashIconOutlined width={25} height={25} />
                                 </motion.button>
@@ -470,81 +301,8 @@ const AlbumComponent = () => {
                     </motion.div>
                 </motion.div>
             )}
+        </>
+    )
+}
 
-            <Modal
-                title="Upload image"
-                open={promptVisible}
-                onOk={handlePromptSubmit}
-                onCancel={handleModalCancel}
-                okText="Submit"
-            >
-                <Form
-                    layout="vertical"
-                    form={form}
-                    autoComplete="off"
-                >
-                    <Form.Item
-                        label="Author"
-                        name="author"
-                        rules={[{ required: true, message: 'Please input the author name!' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        label="Tags"
-                        name="tags"
-                        rules={[{ required: false }]}
-                    >
-                        <TagInput tags={tags} setTags={setTags} />
-                    </Form.Item>
-                    <Form.Item
-                        label="Image"
-                        name="image"
-                        rules={[{ required: true, message: 'Please upload an image' }]}
-                    >
-                        <Upload
-                            name='file'
-                            onChange={handleImgUpload}
-                            accept="image/png, image/jpeg, image/jpg"
-                            maxCount={1}
-                        >
-                            <Button icon={<ArrowUpTrayIcon />}>Click to Upload</Button>
-                        </Upload>
-                    </Form.Item>
-                </Form>
-            </Modal>
-            <div id="album-creation-popup">
-                <DefaultBtn onClick={showModal} title="Create album" />
-
-                <Modal
-                    title="Create album"
-                    open={isModalOpen}
-                    onOk={handleCreate} okText="Create"
-                    onCancel={handleCancel}
-                >
-                    <Form layout="vertical" form={form}>
-                        <Form.Item
-                            label="Author"
-                            name="author"
-                            rules={[{ required: true, message: 'Please input the author name!' }]}
-                        >
-                            <Input />
-                        </Form.Item>
-                        <Form.Item
-                            label="Tags"
-                            name="tags"
-                            rules={[{ required: true, message: 'Please select tags!' }]}
-                        >
-                            <TagInput tags={tags} setTags={setTags} />
-                        </Form.Item>
-                    </Form>
-                </Modal>
-            </div>
-            <Footer/>
-        </div>
-        
-    );
-
-};
-
-export default AlbumComponent;
+export default PhotosList

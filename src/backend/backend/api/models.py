@@ -29,11 +29,12 @@ class Album(models.Model):
         upload_to='post_images',
         default='default_images/default_camera_icon.png'
     )
-    
-    
+    images = models.ManyToManyField('Image', related_name='albums')
+
+
     def __str__(self):
         return self.title
-    
+
 def generate_object_id():
     return str(ObjectId())
 
@@ -48,7 +49,7 @@ class Tag(models.Model):
     id = models.CharField(max_length=24, primary_key=True, default=generate_object_id, editable=True)
     name = models.CharField(max_length=100, unique=True)
     color = models.CharField(max_length=100, unique=True, default=generate_random_color)
-    
+
     def __str__(self):
         return self.name
 
@@ -64,10 +65,10 @@ class Image(models.Model):
     download_url = models.CharField(max_length=600, default=f"https://{os.getenv('AWS_STORAGE_BUCKET_NAME', 'your-bucket-name')}.s3.amazonaws.com/default_images/default_camera_icon.png")
     name = models.CharField(max_length=100, default="default_camera_icon.png")
     tags = models.ManyToManyField(Tag, related_name='images', default=[])  # Many-to-many relationship with Tag Model
-    
+
     def __str__(self):
-        return f"Image(id={self.id}, creation_date={self.creation_date})"      
-    
+        return f"Image(id={self.id}, creation_date={self.creation_date})"
+
     # Deletes all tags that don't have any user associate with them
     def delete(self, *args, **kwargs):
         tags = list(self.tags.all())

@@ -1,16 +1,20 @@
 import './App.css';
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import AlbumPage from './pages/AlbumPage';
+import Homepage from './pages/Homepage';
+import Header from './components/Header/Header';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<AlbumPage />} />
-        {/* Add other routes here */}
-      </Routes>
-    </Router>
+    <div>
+        <Header />
+        <Router>
+            <Routes>
+                <Route path="/" element={<Homepage />} />
+                {/* Add other routes here */}
+            </Routes>
+        </Router>
+    </div>
   );
 }
 
